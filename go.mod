@@ -1,4 +1,4 @@
-module github.com/openxiaoma/umeq-csi
+module github.com/tasselsd/umeq-csi
 
 go 1.19
 

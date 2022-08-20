@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/openxiaoma/umeq-csi/internel/umeq"
+	"github.com/tasselsd/umeq-csi/internel/umeq"
 )
 
 func main() {

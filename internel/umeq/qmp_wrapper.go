@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/openxiaoma/umeq-csi/internel/qmp"
+	"github.com/tasselsd/umeq-csi/internel/qmp"
 )
 
 var mons map[string]*qmp.Monitor
