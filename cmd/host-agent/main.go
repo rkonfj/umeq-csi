@@ -101,7 +101,7 @@ func main() {
 		if err != nil {
 			log.Println("etcd delete ERR:", err)
 		} else {
-			log.Printf("delete key:%s value: %s\n", resp.PrevKvs[0].Key, resp.PrevKvs[0].Value)
+			log.Printf("etcd resp:%v\n", resp)
 		}
 		fmt.Println("Removed ", name)
 	})
