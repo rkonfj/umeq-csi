@@ -1,5 +1,7 @@
 # CSI driver for qemu vm 
 
+> DON'T USED FOR PRODUCTION!
+
 use `qemu-img` create `qcow2` format disk
 
 use `qmp` attach disk to node

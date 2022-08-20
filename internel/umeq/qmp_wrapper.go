@@ -1,11 +1,11 @@
-package wrapper
+package umeq
 
 import (
 	"fmt"
 	"log"
 	"time"
 
-	"github.com/openxiaoma/umeq-csi/pkg/qmp"
+	"github.com/openxiaoma/umeq-csi/internel/qmp"
 )
 
 var mons map[string]*qmp.Monitor
