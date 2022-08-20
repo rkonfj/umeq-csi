@@ -20,8 +20,13 @@ func init() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+	k3, err := qmp.NewMonitor("/run/k3.mon.sock", 60*time.Second)
+	if err != nil {
+		log.Fatalln(err)
+	}
 	mons["k1"] = k1
 	mons["k2"] = k2
+	mons["k3"] = k3
 }
 
 func Exec(node, cmd string) error {
@@ -41,6 +46,6 @@ func Exec(node, cmd string) error {
 	}, &out); err != nil {
 		return err
 	}
-	fmt.Println(out)
+	log.Printf("node: %s, cmd: %s, out: %s\n", node, cmd, out)
 	return nil
 }

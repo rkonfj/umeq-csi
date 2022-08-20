@@ -49,12 +49,38 @@ func main() {
 		size := ctx.Params().GetInt64Default("size", 1024*1024*10)
 		qcowPath := diskRoot + name + ".qcow2"
 		cmd := exec.Command("qemu-img", "create", "-f", "qcow2", qcowPath, fmt.Sprintf("%d", size))
-		if err := cmd.Run(); err != nil {
+		if out, err := cmd.Output(); err != nil {
+			ctx.StatusCode(500)
+			ctx.JSON(iris.Map{
+				"message": err.Error(),
+			})
+			log.Println("create qcow2 err:", err)
+			return
+		} else {
+			log.Println("create qcow2:", string(out))
+		}
+	})
+
+	app.Put("/disk/{name:string}/{size:int64}", func(ctx iris.Context) {
+		name := ctx.Params().GetString("name")
+		size, err := ctx.Params().GetInt64("size")
+		if err != nil {
 			ctx.StatusCode(500)
 			ctx.JSON(iris.Map{
 				"message": err.Error(),
 			})
 			return
+		}
+		qcowPath := diskRoot + name + ".qcow2"
+		cmd := exec.Command("qemu-img", "resize", qcowPath, fmt.Sprintf("%d", size))
+		if out, err := cmd.Output(); err != nil {
+			ctx.StatusCode(500)
+			ctx.JSON(iris.Map{
+				"message": err.Error(),
+			})
+			return
+		} else {
+			fmt.Println(string(out))
 		}
 	})
 
@@ -66,8 +92,18 @@ func main() {
 			ctx.JSON(iris.Map{
 				"message": err.Error(),
 			})
+			log.Println("delete qcow2 err:", err)
 			return
 		}
+		c, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		resp, err := etcdcli.Delete(c, "/xiaomakai/"+name)
+		if err != nil {
+			log.Println("etcd delete ERR:", err)
+		} else {
+			log.Printf("delete key:%s value: %s\n", resp.PrevKvs[0].Key, resp.PrevKvs[0].Value)
+		}
+		fmt.Println("Removed ", name)
 	})
 
 	app.Post("/disk/{name:string}/publish/{node:string}", func(ctx iris.Context) {
@@ -80,10 +116,12 @@ func main() {
 			ctx.JSON(iris.Map{
 				"message": err.Error(),
 			})
+			log.Println("publish err:", err)
 			return
 		}
 
-		c, _ := context.WithTimeout(context.Background(), 3*time.Second)
+		c, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
 		r, err := etcdcli.Get(c, "/xiaomakai/"+name)
 		if err != nil {
 			panic(err)
@@ -107,6 +145,7 @@ func main() {
 			ctx.JSON(iris.Map{
 				"message": err.Error(),
 			})
+			log.Println("device_add err:", err)
 			return
 		}
 	})
@@ -122,6 +161,7 @@ func main() {
 				ctx.JSON(iris.Map{
 					"message": err.Error(),
 				})
+				log.Println("unpushlish err:", err)
 				return
 			}
 		}
@@ -129,13 +169,31 @@ func main() {
 
 	app.Get("/dev-path/{name:string}", func(ctx iris.Context) {
 		name := ctx.Params().GetString("name")
-		c, _ := context.WithTimeout(context.Background(), 3*time.Second)
+		c, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
 		r, err := etcdcli.Get(c, "/xiaomakai/"+name)
 		if err != nil {
 			panic(err)
 		}
+		if r.Count == 0 {
+			message := fmt.Sprintf("volume %s not found! not published yet?", name)
+			ctx.StatusCode(500)
+			ctx.JSON(iris.Map{
+				"message": message,
+			})
+			log.Println(message)
+			return
+		}
 		ctx.Write([]byte("/dev/disk/by-id/virtio-"))
 		ctx.Write(r.Kvs[0].Value)
+	})
+
+	app.Get("/capacity", func(ctx iris.Context) {
+		ctx.JSON(iris.Map{
+			"Available":         1024 * 1024 * 1024 * 1024 * 2,
+			"MaximumVolumeSize": 1024 * 1024 * 1024 * 100,
+			"MinimumVolumeSize": 1024 * 1024 * 10,
+		})
 	})
 
 	app.Listen(":8080")
@@ -146,7 +204,8 @@ var m sync.Mutex
 func NextID() string {
 	m.Lock()
 	defer m.Unlock()
-	c, _ := context.WithTimeout(context.Background(), 5*time.Second)
+	c, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 	r, err := etcdcli.Get(c, "/xiaomakai/id")
 	if err != nil {
 		panic(err)

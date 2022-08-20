@@ -1,6 +1,7 @@
 package umeq
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -12,6 +13,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 	"k8s.io/utils/mount"
 )
 
@@ -38,7 +40,11 @@ func (c *Csi) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeR
 
 	path, err := getDevPath(req.VolumeId)
 	if err != nil {
-		log.Printf("ERR:%s", err)
+		return nil, fmt.Errorf("get dev-path err: %w", err)
+	}
+
+	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
+		return nil, fmt.Errorf("%s not ready yet", path)
 	}
 
 	mounter := mount.New("")
@@ -156,13 +162,6 @@ func (c *Csi) NodeGetCapabilities(ctx context.Context, req *csi.NodeGetCapabilit
 				},
 			},
 		},
-		{
-			Type: &csi.NodeServiceCapability_Rpc{
-				Rpc: &csi.NodeServiceCapability_RPC{
-					Type: csi.NodeServiceCapability_RPC_EXPAND_VOLUME,
-				},
-			},
-		},
 	}
 
 	return &csi.NodeGetCapabilitiesResponse{Capabilities: caps}, nil
@@ -189,7 +188,11 @@ func (c *Csi) NodeExpandVolume(ctx context.Context, req *csi.NodeExpandVolumeReq
 	if len(volID) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "Volume ID not provided")
 	}
-	glog.V(4).Infof("NodeExpandVolume Req: %v", req)
+	if out, err := exec.Command("resize2fs", req.VolumePath).Output(); err != nil {
+		log.Println("resize2fs ERR:", err)
+	} else {
+		log.Println(out)
+	}
 	return &csi.NodeExpandVolumeResponse{}, nil
 }
 
@@ -318,7 +321,16 @@ func (c *Csi) ControllerUnpublishVolume(ctx context.Context, req *csi.Controller
 
 func (c *Csi) GetCapacity(ctx context.Context, req *csi.GetCapacityRequest) (*csi.GetCapacityResponse, error) {
 	log.Printf("GetCapacity:%v", req)
-	return &csi.GetCapacityResponse{}, nil
+	cap, err := getCapacity()
+	if err != nil {
+		log.Println("getCapacity ERR:", err)
+		return &csi.GetCapacityResponse{}, nil
+	}
+	return &csi.GetCapacityResponse{
+		AvailableCapacity: cap.Available,
+		MaximumVolumeSize: wrapperspb.Int64(cap.MaximumVolumeSize),
+		MinimumVolumeSize: wrapperspb.Int64(cap.MinimumVolumeSize),
+	}, nil
 }
 
 func (c *Csi) ListVolumes(ctx context.Context, req *csi.ListVolumesRequest) (*csi.ListVolumesResponse, error) {
@@ -350,5 +362,11 @@ func (c *Csi) ListSnapshots(ctx context.Context, req *csi.ListSnapshotsRequest) 
 
 func (c *Csi) ControllerExpandVolume(ctx context.Context, req *csi.ControllerExpandVolumeRequest) (*csi.ControllerExpandVolumeResponse, error) {
 	log.Printf("ControllerExpandVolume:%v", req)
-	return &csi.ControllerExpandVolumeResponse{}, nil
+	err := expandVolume(req.VolumeId, req.CapacityRange.RequiredBytes)
+	if err != nil {
+		log.Println("expandVolume ERR:", err)
+	}
+	return &csi.ControllerExpandVolumeResponse{
+		CapacityBytes: req.CapacityRange.RequiredBytes,
+	}, nil
 }
