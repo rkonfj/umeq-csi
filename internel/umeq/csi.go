@@ -65,20 +65,7 @@ func (c *Csi) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeR
 		return &csi.NodePublishVolumeResponse{}, nil
 	}
 
-	fsType := req.GetVolumeCapability().GetMount().GetFsType()
-
-	deviceId := ""
-	if req.GetPublishContext() != nil {
-		deviceId = req.GetPublishContext()["deviceID"]
-	}
-
 	readOnly := req.GetReadonly()
-	volumeId := req.GetVolumeId()
-	attrib := req.GetVolumeContext()
-	mountFlags := req.GetVolumeCapability().GetMount().GetMountFlags()
-
-	log.Printf("target %v\nfstype %v\ndevice %v\nreadonly %v\nvolumeId %v\nattributes %v\nmountflags %v\n",
-		targetPath, fsType, deviceId, readOnly, volumeId, attrib, mountFlags)
 
 	options := []string{}
 	if readOnly {
@@ -198,8 +185,6 @@ func (c *Csi) NodeExpandVolume(ctx context.Context, req *csi.NodeExpandVolumeReq
 
 func (c *Csi) GetPluginInfo(ctx context.Context, req *csi.GetPluginInfoRequest) (*csi.GetPluginInfoResponse, error) {
 	log.Printf("GetPluginInfo:%v", req)
-	glog.V(5).Infof("Using default GetPluginInfo")
-
 	if c.DriverName == "" {
 		return nil, status.Error(codes.Unavailable, "Driver name not configured")
 	}
@@ -207,11 +192,12 @@ func (c *Csi) GetPluginInfo(ctx context.Context, req *csi.GetPluginInfoRequest) 
 	if c.VendorVersion == "" {
 		return nil, status.Error(codes.Unavailable, "Driver is missing version")
 	}
-
-	return &csi.GetPluginInfoResponse{
+	resp := &csi.GetPluginInfoResponse{
 		Name:          c.DriverName,
 		VendorVersion: c.VendorVersion,
-	}, nil
+	}
+	log.Printf("GetPluginInfo Resp:%v", resp)
+	return resp, nil
 }
 
 func (c *Csi) Probe(ctx context.Context, req *csi.ProbeRequest) (*csi.ProbeResponse, error) {
@@ -221,7 +207,6 @@ func (c *Csi) Probe(ctx context.Context, req *csi.ProbeRequest) (*csi.ProbeRespo
 
 func (c *Csi) GetPluginCapabilities(ctx context.Context, req *csi.GetPluginCapabilitiesRequest) (*csi.GetPluginCapabilitiesResponse, error) {
 	log.Printf("GetPluginCapabilities:%v", req)
-	glog.V(5).Infof("Using default capabilities")
 	caps := []*csi.PluginCapability{
 		{
 			Type: &csi.PluginCapability_Service_{
@@ -238,7 +223,9 @@ func (c *Csi) GetPluginCapabilities(ctx context.Context, req *csi.GetPluginCapab
 			},
 		},
 	}
-	return &csi.GetPluginCapabilitiesResponse{Capabilities: caps}, nil
+	resp := &csi.GetPluginCapabilitiesResponse{Capabilities: caps}
+	log.Printf("GetPluginCapabilities Resp:%v", resp)
+	return resp, nil
 }
 
 func (c *Csi) CreateVolume(ctx context.Context, req *csi.CreateVolumeRequest) (resp *csi.CreateVolumeResponse, finalErr error) {
@@ -290,7 +277,7 @@ func (c *Csi) ControllerGetCapabilities(ctx context.Context, req *csi.Controller
 			},
 		},
 	}
-	log.Printf("ControllerGetCapabilities Res:%v", res)
+	log.Printf("ControllerGetCapabilities Resp:%v", res)
 	return res, nil
 }
 
@@ -303,7 +290,7 @@ func (c *Csi) ControllerPublishVolume(ctx context.Context, req *csi.ControllerPu
 	log.Printf("ControllerPublishVolume:%v", req)
 	err := publishVolume(req.VolumeId, req.NodeId)
 	if err != nil {
-		log.Printf("ERR:%s", err)
+		return nil, err
 	}
 	return &csi.ControllerPublishVolumeResponse{
 		PublishContext: map[string]string{},
@@ -343,8 +330,6 @@ func (c *Csi) ControllerGetVolume(ctx context.Context, req *csi.ControllerGetVol
 	return &csi.ControllerGetVolumeResponse{}, nil
 }
 
-// CreateSnapshot uses tar command to create snapshot for hostpath volume. The tar command can quickly create
-// archives of entire directories. The host image must have "tar" binaries in /bin, /usr/sbin, or /usr/bin.
 func (c *Csi) CreateSnapshot(ctx context.Context, req *csi.CreateSnapshotRequest) (*csi.CreateSnapshotResponse, error) {
 	log.Printf("CreateSnapshot:%v", req)
 	return &csi.CreateSnapshotResponse{}, nil

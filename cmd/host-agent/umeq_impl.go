@@ -1,4 +1,4 @@
-package umeq
+package main
 
 import (
 	"context"

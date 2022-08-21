@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"os"
 
 	"github.com/tasselsd/umeq-csi/internel/umeq"
@@ -23,6 +22,5 @@ func main() {
 		VendorVersion: "1.0.0",
 	}
 	s.Start("unix://"+endpoint, &csi, &csi, &csi)
-	log.Println("listen on unix://" + endpoint)
 	s.Wait()
 }

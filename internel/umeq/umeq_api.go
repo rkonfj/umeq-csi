@@ -2,6 +2,7 @@ package umeq
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -39,6 +40,9 @@ func publishVolume(volumeId, nodeId string) error {
 	}
 	defer res.Body.Close()
 	b, _ := ioutil.ReadAll(res.Body)
+	if res.StatusCode != 200 {
+		return errors.New(string(b))
+	}
 	log.Println("publishVolume resp:", string(b))
 	return nil
 }
