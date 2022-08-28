@@ -1,0 +1,17 @@
+serverPort: 8080
+qmp:
+- name: k1
+  sock: /run/k1.mon.sock
+- name: k2
+  sock: /run/k2.mon.sock
+- name: k3
+  sock: /run/k3.mon.sock
+imagePath: /fs/trust/vm/csi/
+etcd:
+  endpoints: 
+  - https://192.168.3.35:2379
+  - https://192.168.3.36:2379
+  - https://192.168.3.43:2379
+  cert: etcd.crt
+  key: etcd.key
+  ca: etcd-ca.crt

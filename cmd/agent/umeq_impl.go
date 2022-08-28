@@ -11,34 +11,21 @@ import (
 	"time"
 
 	clientv3 "go.etcd.io/etcd/client/v3"
-	"go.etcd.io/etcd/pkg/transport"
 )
 
-var diskRoot string = "/fs/trust/vm/csi/"
-var etcdcli *clientv3.Client
-
-func init() {
-	tlsInfo := transport.TLSInfo{
-		CertFile:      "etcd.crt",
-		KeyFile:       "etcd.key",
-		TrustedCAFile: "etcd-ca.crt",
-	}
-	tlsConfig, err := tlsInfo.ClientConfig()
-	if err != nil {
-		log.Fatal(err)
-	}
-	cli, err := clientv3.New(clientv3.Config{
-		Endpoints:   []string{"192.168.3.35:2379"},
-		DialTimeout: 5 * time.Second,
-		TLS:         tlsConfig,
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-	etcdcli = cli
+type Agent struct {
+	etcdcli  *clientv3.Client
+	diskRoot string
 }
 
-func DoUnpublishVolume(volumeId, nodeId string) error {
+func NewAgent(etcdcli *clientv3.Client, diskRoot string) *Agent {
+	return &Agent{
+		etcdcli:  etcdcli,
+		diskRoot: diskRoot,
+	}
+}
+
+func (a *Agent) UnpublishVolume(volumeId, nodeId string) error {
 	err := Exec(nodeId, "device_del "+volumeId)
 	if err != nil {
 		err = Exec(nodeId, "drive_del "+volumeId)
@@ -49,8 +36,8 @@ func DoUnpublishVolume(volumeId, nodeId string) error {
 	return nil
 }
 
-func DoPublishVolume(volumeId, nodeId string) error {
-	qcow2Path := diskRoot + volumeId + ".qcow2"
+func (a *Agent) PublishVolume(volumeId, nodeId string) error {
+	qcow2Path := a.diskRoot + volumeId + ".qcow2"
 	err := Exec(nodeId, fmt.Sprintf("drive_add 0 if=none,format=qcow2,file=%s,id=%s", qcow2Path, volumeId))
 	if err != nil {
 		return fmt.Errorf("publish[drive_add] err:%w", err)
@@ -58,14 +45,14 @@ func DoPublishVolume(volumeId, nodeId string) error {
 
 	c, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	r, err := etcdcli.Get(c, "/xiaomakai/"+volumeId)
+	r, err := a.etcdcli.Get(c, "/xiaomakai/"+volumeId)
 	if err != nil {
 		panic(err)
 	}
 	if r.Count == 0 {
-		id := nextID()
-		etcdcli.Put(c, "/xiaomakai/"+volumeId, id)
-		r, err = etcdcli.Get(c, "/xiaomakai/"+volumeId)
+		id := a.nextID()
+		a.etcdcli.Put(c, "/xiaomakai/"+volumeId, id)
+		r, err = a.etcdcli.Get(c, "/xiaomakai/"+volumeId)
 		if err != nil {
 			panic(err)
 		}
@@ -82,8 +69,8 @@ func DoPublishVolume(volumeId, nodeId string) error {
 	return nil
 }
 
-func DoCreateVolume(volumeId string, requiredBytes int64) error {
-	qcowPath := diskRoot + volumeId + ".qcow2"
+func (a *Agent) CreateVolume(volumeId string, requiredBytes int64) error {
+	qcowPath := a.diskRoot + volumeId + ".qcow2"
 	cmd := exec.Command("qemu-img", "create", "-f", "qcow2", qcowPath, fmt.Sprintf("%d", requiredBytes))
 	if out, err := cmd.Output(); err != nil {
 		return fmt.Errorf("create qcow2 err:%w", err)
@@ -93,8 +80,8 @@ func DoCreateVolume(volumeId string, requiredBytes int64) error {
 	return nil
 }
 
-func DoExpandVolume(volumeId string, requiredBytes int64) error {
-	qcowPath := diskRoot + volumeId + ".qcow2"
+func (a *Agent) ExpandVolume(volumeId string, requiredBytes int64) error {
+	qcowPath := a.diskRoot + volumeId + ".qcow2"
 	cmd := exec.Command("qemu-img", "resize", qcowPath, fmt.Sprintf("%d", requiredBytes))
 	if out, err := cmd.Output(); err != nil {
 		return err
@@ -104,14 +91,14 @@ func DoExpandVolume(volumeId string, requiredBytes int64) error {
 	return nil
 }
 
-func DoDeleteVolume(volumeId string) error {
-	err := os.Remove(diskRoot + volumeId + ".qcow2")
+func (a *Agent) DeleteVolume(volumeId string) error {
+	err := os.Remove(a.diskRoot + volumeId + ".qcow2")
 	if err != nil {
 		return fmt.Errorf("delete qcow2 err:%w", err)
 	}
 	c, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	resp, err := etcdcli.Delete(c, "/xiaomakai/"+volumeId)
+	resp, err := a.etcdcli.Delete(c, "/xiaomakai/"+volumeId)
 	if err != nil {
 		log.Println("etcd delete ERR:", err)
 	} else {
@@ -121,10 +108,10 @@ func DoDeleteVolume(volumeId string) error {
 	return nil
 }
 
-func DoGetDevPath(volumeId string) (string, error) {
+func (a *Agent) GetDevPath(volumeId string) (string, error) {
 	c, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	r, err := etcdcli.Get(c, "/xiaomakai/"+volumeId)
+	r, err := a.etcdcli.Get(c, "/xiaomakai/"+volumeId)
 	if err != nil {
 		panic(err)
 	}
@@ -136,21 +123,21 @@ func DoGetDevPath(volumeId string) (string, error) {
 
 var m sync.Mutex
 
-func nextID() string {
+func (a *Agent) nextID() string {
 	m.Lock()
 	defer m.Unlock()
 	c, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	r, err := etcdcli.Get(c, "/xiaomakai/id")
+	r, err := a.etcdcli.Get(c, "/xiaomakai/id")
 	if err != nil {
 		panic(err)
 	}
 	if r.Count == 0 {
-		etcdcli.Put(c, "/xiaomakai/id", "1")
+		a.etcdcli.Put(c, "/xiaomakai/id", "1")
 	} else {
 		value, _ := strconv.Atoi(string(r.Kvs[0].Value))
 		value += 1
-		etcdcli.Put(c, "/xiaomakai/id", fmt.Sprintf("%d", value))
+		a.etcdcli.Put(c, "/xiaomakai/id", fmt.Sprintf("%d", value))
 		return string(r.Kvs[0].Value)
 	}
 	return "0"
