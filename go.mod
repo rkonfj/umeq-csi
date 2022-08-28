@@ -11,6 +11,7 @@ require (
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f
 	google.golang.org/grpc v1.48.0
 	google.golang.org/protobuf v1.27.1
+	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/utils v0.0.0-20220812165043-ad590609e2e5
 )
 
@@ -71,6 +72,5 @@ require (
 	google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c // indirect
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	gopkg.in/ini.v1 v1.51.1 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/klog/v2 v2.9.0 // indirect
 )
