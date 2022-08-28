@@ -10,6 +10,8 @@ import (
 	"go.etcd.io/etcd/pkg/transport"
 )
 
+var gracefulShutdowns []func() error
+
 func main() {
 	app := iris.New()
 
@@ -35,6 +37,15 @@ func main() {
 	agent := NewAgent(cli, config.ImagePath)
 
 	Routing(app, agent)
+
+	defer func() {
+		for _, hook := range gracefulShutdowns {
+			err = hook()
+			if err != nil {
+				log.Println(err)
+			}
+		}
+	}()
 
 	app.Listen(fmt.Sprintf("0.0.0.0:%d", config.ServerPort))
 }

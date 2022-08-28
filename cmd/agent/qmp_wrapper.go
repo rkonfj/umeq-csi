@@ -8,25 +8,18 @@ import (
 	"github.com/tasselsd/umeq-csi/internel/qmp"
 )
 
-var mons map[string]*qmp.Monitor
+var mons map[string]*qmp.Monitor = make(map[string]*qmp.Monitor)
 
-func init() {
-	mons = make(map[string]*qmp.Monitor)
-	k1, err := qmp.NewMonitor("/run/k1.mon.sock", 60*time.Second)
-	if err != nil {
-		log.Fatalln(err)
+func initMons(qs []Qmp) {
+	for _, q := range qs {
+		mon, err := qmp.NewMonitor(q.Sock, 60*time.Second)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		log.Printf("Registered %s -> %s\n", q.Name, q.Sock)
+		mons[q.Name] = mon
 	}
-	k2, err := qmp.NewMonitor("/run/k2.mon.sock", 60*time.Second)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	k3, err := qmp.NewMonitor("/run/k3.mon.sock", 60*time.Second)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	mons["k1"] = k1
-	mons["k2"] = k2
-	mons["k3"] = k3
 }
 
 func Exec(node, cmd string) error {

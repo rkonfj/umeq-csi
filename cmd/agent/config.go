@@ -59,4 +59,6 @@ func init() {
 		config.ServerPort = 8080
 	}
 
+	// init qmp mons
+	initMons(config.Qmp)
 }
