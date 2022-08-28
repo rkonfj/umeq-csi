@@ -1,0 +1,12 @@
+[Unit]
+Description=Umeq CSI Host Agent
+After=network.target network-online.target nss-lookup.target
+
+[Service]
+WorkingDirectory=/opt/umeq-csi
+ExecStart=/opt/umeq-csi/agent
+KillMode=mixed
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
