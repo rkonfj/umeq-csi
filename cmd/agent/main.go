@@ -34,7 +34,16 @@ func main() {
 	}
 	defer cli.Close()
 
-	agent := NewAgent(cli, config.ImagePath)
+	var attacher Attacher
+	if len(config.Qmp) == 0 {
+		log.Println("Using virsh attacher")
+		attacher = NewVirshAttacher()
+	} else {
+		log.Println("Using qmp attacher")
+		attacher = NewQmpAttacher(config.Qmp)
+	}
+
+	agent := NewAgent(cli, config.ImagePath, attacher)
 
 	Routing(app, agent)
 

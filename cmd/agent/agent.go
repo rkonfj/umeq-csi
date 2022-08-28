@@ -16,19 +16,21 @@ import (
 type Agent struct {
 	etcdcli  *clientv3.Client
 	diskRoot string
+	attacher Attacher
 }
 
-func NewAgent(etcdcli *clientv3.Client, diskRoot string) *Agent {
+func NewAgent(etcdcli *clientv3.Client, diskRoot string, attacher Attacher) *Agent {
 	return &Agent{
 		etcdcli:  etcdcli,
 		diskRoot: diskRoot,
+		attacher: attacher,
 	}
 }
 
 func (a *Agent) UnpublishVolume(volumeId, nodeId string) error {
-	err := Exec(nodeId, "device_del "+volumeId)
+	err := a.attacher.Exec(nodeId, "device_del "+volumeId)
 	if err != nil {
-		err = Exec(nodeId, "drive_del "+volumeId)
+		err = a.attacher.Exec(nodeId, "drive_del "+volumeId)
 		if err != nil {
 			return fmt.Errorf("unpushlish err:%w", err)
 		}
@@ -38,7 +40,7 @@ func (a *Agent) UnpublishVolume(volumeId, nodeId string) error {
 
 func (a *Agent) PublishVolume(volumeId, nodeId string) error {
 	qcow2Path := a.diskRoot + volumeId + ".qcow2"
-	err := Exec(nodeId, fmt.Sprintf("drive_add 0 if=none,format=qcow2,file=%s,id=%s", qcow2Path, volumeId))
+	err := a.attacher.Exec(nodeId, fmt.Sprintf("drive_add 0 if=none,format=qcow2,file=%s,id=%s", qcow2Path, volumeId))
 	if err != nil {
 		return fmt.Errorf("publish[drive_add] err:%w", err)
 	}
@@ -58,9 +60,9 @@ func (a *Agent) PublishVolume(volumeId, nodeId string) error {
 		}
 	}
 
-	err = Exec(nodeId, fmt.Sprintf("device_add virtio-blk-pci,drive=%s,id=%s,serial=%s", volumeId, volumeId, r.Kvs[0].Value))
+	err = a.attacher.Exec(nodeId, fmt.Sprintf("device_add virtio-blk-pci,drive=%s,id=%s,serial=%s", volumeId, volumeId, r.Kvs[0].Value))
 	if err != nil {
-		err = Exec(nodeId, "drive_del "+volumeId)
+		err = a.attacher.Exec(nodeId, "drive_del "+volumeId)
 		if err != nil {
 			log.Println("rollback error:", err.Error())
 		}

@@ -40,9 +40,6 @@ func init() {
 	if config.ImagePath == "" {
 		panic("config.imagePath is required!")
 	}
-	if len(config.Qmp) == 0 {
-		panic("config.qmp is required!")
-	}
 	if len(config.Etcd.Endpoints) == 0 {
 		panic("config.etcd.endpoints is required!")
 	}
@@ -59,6 +56,4 @@ func init() {
 		config.ServerPort = 8080
 	}
 
-	// init qmp mons
-	initMons(config.Qmp)
 }
