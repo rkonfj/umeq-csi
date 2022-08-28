@@ -11,8 +11,18 @@ import (
 
 var httpCli http.Client = http.Client{}
 
-func unpublishVolume(volumeId, nodeId string) error {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("http://192.168.3.11:8080/disk/%s/publish/%s", volumeId, nodeId), nil)
+type AgentService struct {
+	AgentServer string
+}
+
+func NewAgentService(agentServer string) *AgentService {
+	return &AgentService{
+		AgentServer: agentServer,
+	}
+}
+
+func (u *AgentService) UnpublishVolume(volumeId, nodeId string) error {
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/disk/%s/publish/%s", u.AgentServer, volumeId, nodeId), nil)
 	if err != nil {
 		return err
 	}
@@ -33,8 +43,8 @@ func unpublishVolume(volumeId, nodeId string) error {
 	return nil
 }
 
-func publishVolume(volumeId, nodeId string) error {
-	res, err := http.Post(fmt.Sprintf("http://192.168.3.11:8080/disk/%s/publish/%s", volumeId, nodeId), "application/x-www-form-urlencoded", nil)
+func (u *AgentService) PublishVolume(volumeId, nodeId string) error {
+	res, err := http.Post(fmt.Sprintf("%s/disk/%s/publish/%s", u.AgentServer, volumeId, nodeId), "application/x-www-form-urlencoded", nil)
 	if err != nil {
 		return fmt.Errorf("publish disk err:%s", err.Error())
 	}
@@ -47,8 +57,8 @@ func publishVolume(volumeId, nodeId string) error {
 	return nil
 }
 
-func createVolume(volumeId string, requiredBytes int64) error {
-	res, err := http.Post(fmt.Sprintf("http://192.168.3.11:8080/disk/%s/%d", volumeId, requiredBytes), "application/x-www-form-urlencoded", nil)
+func (u *AgentService) CreateVolume(volumeId string, requiredBytes int64) error {
+	res, err := http.Post(fmt.Sprintf("%s/disk/%s/%d", u.AgentServer, volumeId, requiredBytes), "application/x-www-form-urlencoded", nil)
 	if err != nil {
 		return fmt.Errorf("create disk err:%s", err.Error())
 	}
@@ -58,8 +68,8 @@ func createVolume(volumeId string, requiredBytes int64) error {
 	return nil
 }
 
-func expandVolume(volumeId string, requiredBytes int64) error {
-	req, err := http.NewRequest("PUT", fmt.Sprintf("http://192.168.3.11:8080/disk/%s/%d", volumeId, requiredBytes), nil)
+func (u *AgentService) ExpandVolume(volumeId string, requiredBytes int64) error {
+	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/disk/%s/%d", u.AgentServer, volumeId, requiredBytes), nil)
 	if err != nil {
 		return err
 	}
@@ -80,8 +90,8 @@ func expandVolume(volumeId string, requiredBytes int64) error {
 	return nil
 }
 
-func deleteVolume(volumeId string) error {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("http://192.168.3.11:8080/disk/%s", volumeId), nil)
+func (u *AgentService) DeleteVolume(volumeId string) error {
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("%s/disk/%s", u.AgentServer, volumeId), nil)
 	if err != nil {
 		return err
 	}
@@ -102,8 +112,8 @@ func deleteVolume(volumeId string) error {
 	return nil
 }
 
-func getDevPath(volumeId string) (string, error) {
-	res, err := http.Get(fmt.Sprintf("http://192.168.3.11:8080/dev-path/%s", volumeId))
+func (u *AgentService) GetDevPath(volumeId string) (string, error) {
+	res, err := http.Get(fmt.Sprintf("%s/dev-path/%s", u.AgentServer, volumeId))
 	if err != nil {
 		return "", err
 	}
@@ -113,8 +123,8 @@ func getDevPath(volumeId string) (string, error) {
 	return string(b), nil
 }
 
-func getCapacity() (*Capacity, error) {
-	res, err := http.Get("http://192.168.3.11:8080/capacity")
+func (u *AgentService) GetCapacity() (*Capacity, error) {
+	res, err := http.Get(u.AgentServer + "/capacity")
 	if err != nil {
 		return nil, err
 	}

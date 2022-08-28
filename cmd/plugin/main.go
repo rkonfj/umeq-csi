@@ -9,18 +9,20 @@ import (
 func main() {
 	endpoint := os.Getenv("CSI_ENDPOINT")
 	nodeId := os.Getenv("NODE_NAME")
+	agentServer := os.Getenv("AGENT_SERVER")
 	if endpoint == "" {
-		panic("system environment CSI_ENDPOINT must not empty!")
+		panic("system environment CSI_ENDPOINT is required!")
 	}
 	if nodeId == "" {
-		panic("system environment NODE_NAME must not empty!")
+		panic("system environment NODE_NAME is required!")
 	}
+	if agentServer == "" {
+		panic("system environment AGENT_SERVER is required!")
+	}
+	agent := umeq.NewAgentService(agentServer)
+	csi := umeq.NewCsi(nodeId, "umeq-csi.xiaomakai.com", "1.0.0", agent)
+
 	s := umeq.NewNonBlockingGRPCServer()
-	csi := umeq.Csi{
-		NodeID:        nodeId,
-		DriverName:    "umeq-csi.xiaomakai.com",
-		VendorVersion: "1.0.0",
-	}
-	s.Start("unix://"+endpoint, &csi, &csi, &csi)
+	s.Start("unix://"+endpoint, csi, csi, csi)
 	s.Wait()
 }

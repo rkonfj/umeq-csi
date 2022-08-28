@@ -21,6 +21,16 @@ type Csi struct {
 	NodeID        string
 	DriverName    string
 	VendorVersion string
+	Agent         *AgentService
+}
+
+func NewCsi(nodeId, driverName, venderVersion string, agent *AgentService) *Csi {
+	return &Csi{
+		NodeID:        nodeId,
+		DriverName:    driverName,
+		VendorVersion: venderVersion,
+		Agent:         agent,
+	}
 }
 
 func (c *Csi) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
@@ -38,7 +48,7 @@ func (c *Csi) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeR
 
 	targetPath := req.GetTargetPath()
 
-	path, err := getDevPath(req.VolumeId)
+	path, err := c.Agent.GetDevPath(req.VolumeId)
 	if err != nil {
 		return nil, fmt.Errorf("get dev-path err: %w", err)
 	}
@@ -231,7 +241,7 @@ func (c *Csi) GetPluginCapabilities(ctx context.Context, req *csi.GetPluginCapab
 func (c *Csi) CreateVolume(ctx context.Context, req *csi.CreateVolumeRequest) (resp *csi.CreateVolumeResponse, finalErr error) {
 	log.Printf("CreateVolume:%v", req)
 
-	err := createVolume(req.Name, req.CapacityRange.RequiredBytes)
+	err := c.Agent.CreateVolume(req.Name, req.CapacityRange.RequiredBytes)
 	if err != nil {
 		log.Printf("ERR:%s", err)
 	}
@@ -251,7 +261,7 @@ func (c *Csi) CreateVolume(ctx context.Context, req *csi.CreateVolumeRequest) (r
 
 func (c *Csi) DeleteVolume(ctx context.Context, req *csi.DeleteVolumeRequest) (*csi.DeleteVolumeResponse, error) {
 	log.Printf("DeleteVolume:%v", req)
-	err := deleteVolume(req.VolumeId)
+	err := c.Agent.DeleteVolume(req.VolumeId)
 	if err != nil {
 		log.Printf("ERR:%s", err)
 	}
@@ -288,7 +298,7 @@ func (c *Csi) ValidateVolumeCapabilities(ctx context.Context, req *csi.ValidateV
 
 func (c *Csi) ControllerPublishVolume(ctx context.Context, req *csi.ControllerPublishVolumeRequest) (*csi.ControllerPublishVolumeResponse, error) {
 	log.Printf("ControllerPublishVolume:%v", req)
-	err := publishVolume(req.VolumeId, req.NodeId)
+	err := c.Agent.PublishVolume(req.VolumeId, req.NodeId)
 	if err != nil {
 		return nil, err
 	}
@@ -299,7 +309,7 @@ func (c *Csi) ControllerPublishVolume(ctx context.Context, req *csi.ControllerPu
 
 func (c *Csi) ControllerUnpublishVolume(ctx context.Context, req *csi.ControllerUnpublishVolumeRequest) (*csi.ControllerUnpublishVolumeResponse, error) {
 	log.Printf("ControllerUnpublishVolume:%v", req)
-	err := unpublishVolume(req.VolumeId, req.NodeId)
+	err := c.Agent.UnpublishVolume(req.VolumeId, req.NodeId)
 	if err != nil {
 		log.Printf("ERR:%s", err)
 	}
@@ -308,7 +318,7 @@ func (c *Csi) ControllerUnpublishVolume(ctx context.Context, req *csi.Controller
 
 func (c *Csi) GetCapacity(ctx context.Context, req *csi.GetCapacityRequest) (*csi.GetCapacityResponse, error) {
 	log.Printf("GetCapacity:%v", req)
-	cap, err := getCapacity()
+	cap, err := c.Agent.GetCapacity()
 	if err != nil {
 		log.Println("getCapacity ERR:", err)
 		return &csi.GetCapacityResponse{}, nil
@@ -347,7 +357,7 @@ func (c *Csi) ListSnapshots(ctx context.Context, req *csi.ListSnapshotsRequest) 
 
 func (c *Csi) ControllerExpandVolume(ctx context.Context, req *csi.ControllerExpandVolumeRequest) (*csi.ControllerExpandVolumeResponse, error) {
 	log.Printf("ControllerExpandVolume:%v", req)
-	err := expandVolume(req.VolumeId, req.CapacityRange.RequiredBytes)
+	err := c.Agent.ExpandVolume(req.VolumeId, req.CapacityRange.RequiredBytes)
 	if err != nil {
 		log.Println("expandVolume ERR:", err)
 	}
