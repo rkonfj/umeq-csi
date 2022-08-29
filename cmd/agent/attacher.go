@@ -62,7 +62,7 @@ func NewVirshAttacher() *VirshAttacher {
 }
 
 func (v *VirshAttacher) Exec(node, cmd string) error {
-	out, err := exec.Command("virsh", "qemu-monitor-command", "--hmp", node, cmd).Output()
+	out, err := exec.Command("virsh", "qemu-monitor-command", "--hmp", node, fmt.Sprintf("'%s'", cmd)).Output()
 	if err != nil {
 		return err
 	}
