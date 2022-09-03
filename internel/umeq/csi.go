@@ -312,6 +312,7 @@ func (c *Csi) ControllerUnpublishVolume(ctx context.Context, req *csi.Controller
 	err := c.Agent.UnpublishVolume(req.VolumeId, req.NodeId)
 	if err != nil {
 		log.Printf("ERR:%s", err)
+		return nil, err
 	}
 	return &csi.ControllerUnpublishVolumeResponse{}, nil
 }
