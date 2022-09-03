@@ -41,7 +41,9 @@ probe:
 			break probe
 		}
 	}
-	return "vd" + string(targetLetter+1), nil
+	target := "vd" + string(targetLetter+1)
+	log.Println("determined target:", target)
+	return target, nil
 }
 
 func (v *VirshAttacher) targetFromEtcd(volumeId string) (string, error) {
@@ -68,13 +70,14 @@ func (v *VirshAttacher) Attach(nodeId, volumeId, qcow2Path string) error {
 	defer cancel()
 	_, err = v.etcdctl.Put(ctx, "/xiaomakai/"+volumeId, taregt)
 	if err != nil {
-		return err
+		return fmt.Errorf("etctctl put err:%w", err)
 	}
 	cmd := fmt.Sprintf("virsh attach-disk %s %s %s --driver qemu --subdriver qcow2 --targetbus virtio",
 		nodeId, qcow2Path, taregt)
-	out, err := exec.Command("sh", "-c", cmd).Output()
+	log.Println(cmd)
+	out, err := exec.Command("sh", "-c", cmd).CombinedOutput()
 	if err != nil {
-		return err
+		return fmt.Errorf("%s error:%w", string(out), err)
 	}
 	log.Println(string(out))
 	return nil
