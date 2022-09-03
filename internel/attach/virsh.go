@@ -38,7 +38,7 @@ probe:
 		}
 		if target[2] == byte(targetLetter) {
 			targetLetter = targetLetter + 1
-			break probe
+			goto probe
 		}
 	}
 	target := "vd" + string(targetLetter)
