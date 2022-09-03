@@ -125,6 +125,7 @@ func (q *QmpAttacher) Detach(nodeId, volumeId string) error {
 			return fmt.Errorf("detach err:%w", err)
 		}
 	}
+	q.Clean(volumeId)
 	return nil
 }
 
