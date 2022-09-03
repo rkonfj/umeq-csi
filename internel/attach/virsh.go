@@ -41,7 +41,7 @@ probe:
 			break probe
 		}
 	}
-	target := "vd" + string(targetLetter+1)
+	target := "vd" + string(targetLetter)
 	log.Println("determined target:", target)
 	return target, nil
 }
