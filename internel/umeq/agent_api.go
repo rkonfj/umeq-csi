@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 )
@@ -35,7 +35,7 @@ func (u *AgentService) UnpublishVolume(volumeId, nodeId string) error {
 	defer resp.Body.Close()
 
 	// Read Response Body
-	respBody, err := ioutil.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
@@ -49,7 +49,7 @@ func (u *AgentService) PublishVolume(volumeId, nodeId string) error {
 		return fmt.Errorf("publish disk err:%s", err.Error())
 	}
 	defer res.Body.Close()
-	b, _ := ioutil.ReadAll(res.Body)
+	b, _ := io.ReadAll(res.Body)
 	if res.StatusCode != 200 {
 		return errors.New(string(b))
 	}
@@ -63,7 +63,7 @@ func (u *AgentService) CreateVolume(volumeId string, requiredBytes int64) error 
 		return fmt.Errorf("create disk err:%s", err.Error())
 	}
 	defer res.Body.Close()
-	b, _ := ioutil.ReadAll(res.Body)
+	b, _ := io.ReadAll(res.Body)
 	log.Println("createVolume resp:", string(b))
 	return nil
 }
@@ -82,7 +82,7 @@ func (u *AgentService) ExpandVolume(volumeId string, requiredBytes int64) error 
 	defer resp.Body.Close()
 
 	// Read Response Body
-	respBody, err := ioutil.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
@@ -104,7 +104,7 @@ func (u *AgentService) DeleteVolume(volumeId string) error {
 	defer resp.Body.Close()
 
 	// Read Response Body
-	respBody, err := ioutil.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
@@ -118,7 +118,7 @@ func (u *AgentService) GetDevPath(volumeId string) (string, error) {
 		return "", err
 	}
 	defer res.Body.Close()
-	b, _ := ioutil.ReadAll(res.Body)
+	b, _ := io.ReadAll(res.Body)
 	log.Println("get dev-path resp:", string(b))
 	return string(b), nil
 }
@@ -129,7 +129,7 @@ func (u *AgentService) GetCapacity() (*Capacity, error) {
 		return nil, err
 	}
 	defer res.Body.Close()
-	b, _ := ioutil.ReadAll(res.Body)
+	b, _ := io.ReadAll(res.Body)
 	log.Println("getCapacity resp:", string(b))
 	var cap Capacity
 	err = json.Unmarshal(b, &cap)
