@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/kataras/iris/v12"
+	"github.com/tasselsd/umeq-csi/internel/attach"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"go.etcd.io/etcd/pkg/transport"
 )
@@ -34,16 +35,16 @@ func main() {
 	}
 	defer cli.Close()
 
-	var attacher Attacher
-	if len(config.Qmp) == 0 {
+	var attacher attach.Attacher
+	if len(config.Socks) == 0 {
 		log.Println("Using virsh attacher")
-		attacher = NewVirshAttacher()
+		attacher = attach.NewVirshAttacher(cli)
 	} else {
 		log.Println("Using qmp attacher")
-		attacher = NewQmpAttacher(config.Qmp)
+		attacher = attach.NewQmpAttacher(cli, config.Socks)
 	}
 
-	agent := NewAgent(cli, config.ImagePath, attacher)
+	agent := NewAgent(config.ImagePath, attacher)
 
 	Routing(app, agent)
 

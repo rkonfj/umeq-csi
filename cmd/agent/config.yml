@@ -1,11 +1,11 @@
 serverPort: 8080
-qmp:
+socks:
 - name: k1
-  sock: /run/k1.mon.sock
+  path: /run/k1.mon.sock
 - name: k2
-  sock: /run/k2.mon.sock
+  path: /run/k2.mon.sock
 - name: k3
-  sock: /run/k3.mon.sock
+  path: /run/k3.mon.sock
 imagePath: /fs/trust/vm/csi/
 etcd:
   endpoints: 

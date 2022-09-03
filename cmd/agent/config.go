@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"github.com/tasselsd/umeq-csi/internel/attach"
 	"gopkg.in/yaml.v3"
 )
 
@@ -19,7 +20,7 @@ type Etcd struct {
 }
 
 type Config struct {
-	Qmp        []Qmp
+	Socks      []attach.Sock
 	ImagePath  string `yaml:"imagePath"`
 	Etcd       Etcd
 	ServerPort int `yaml:"serverPort"`
