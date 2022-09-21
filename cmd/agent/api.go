@@ -100,4 +100,10 @@ func Routing(app *iris.Application, agent *Agent) {
 			"MinimumVolumeSize": 1024 * 1024 * 10,
 		})
 	})
+
+	app.Get("/probe", func(ctx iris.Context) {
+		ctx.JSON(iris.Map{
+			"Message": "ok",
+		})
+	})
 }

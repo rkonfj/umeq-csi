@@ -212,6 +212,11 @@ func (c *Csi) GetPluginInfo(ctx context.Context, req *csi.GetPluginInfoRequest) 
 
 func (c *Csi) Probe(ctx context.Context, req *csi.ProbeRequest) (*csi.ProbeResponse, error) {
 	log.Printf("Probe:%v", req)
+	err := c.Agent.Probe()
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 	return &csi.ProbeResponse{}, nil
 }
 

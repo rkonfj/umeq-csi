@@ -136,6 +136,17 @@ func (u *AgentService) GetCapacity() (*Capacity, error) {
 	return &cap, err
 }
 
+func (u *AgentService) Probe() error {
+	res, err := http.Get(u.AgentServer + "/probe")
+	if err != nil {
+		return fmt.Errorf("may be agent server not started yet? %w", err)
+	}
+	defer res.Body.Close()
+	b, _ := io.ReadAll(res.Body)
+	log.Println("Probe resp:", string(b))
+	return nil
+}
+
 type Capacity struct {
 	Available         int64
 	MaximumVolumeSize int64
