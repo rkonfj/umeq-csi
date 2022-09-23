@@ -75,7 +75,7 @@ func (v *VirshAttacher) Attach(nodeId, volumeId, qcow2Path string) error {
 		if err != nil {
 			return err
 		}
-		_, err = v.etcdctl.Put(ctx, "/xiaomakai/"+volumeId, _taregt)
+		_, err = v.etcdctl.Put(ctx, "/xiaomakai/"+volumeId, _target)
 		if err != nil {
 			return fmt.Errorf("etctctl put err:%w", err)
 		}
