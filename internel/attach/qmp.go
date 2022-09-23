@@ -93,20 +93,23 @@ func (q *QmpAttacher) Attach(nodeId, volumeId, qcow2Path string) error {
 
 	c, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
+	var serialId string
 	r, err := q.etcdctl.Get(c, "/xiaomakai/"+volumeId)
 	if err != nil {
 		return err
 	}
 	if r.Count == 0 {
 		id := q.nextSeq()
-		q.etcdctl.Put(c, "/xiaomakai/"+volumeId, id)
-		r, err = q.etcdctl.Get(c, "/xiaomakai/"+volumeId)
+		_, err := q.etcdctl.Put(c, "/xiaomakai/"+volumeId, id)
 		if err != nil {
 			return err
 		}
+		serialId = id
+	} else {
+		serialId = string(r.Kvs[0].Value)
 	}
 	cmd2 := fmt.Sprintf("device_add virtio-blk-pci,drive=%s,id=%s,serial=%s",
-		volumeId, volumeId, r.Kvs[0].Value)
+		volumeId, volumeId, serialId)
 	err = q.exec(nodeId, cmd2)
 	if err != nil {
 		err = q.exec(nodeId, "drive_del "+volumeId)

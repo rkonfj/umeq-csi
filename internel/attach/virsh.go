@@ -63,18 +63,29 @@ func (v *VirshAttacher) Attach(nodeId, volumeId, qcow2Path string) error {
 	log.Println("[info] virsh request attach", nodeId, volumeId, qcow2Path)
 	v.lock(nodeId)
 	defer v.unlock(nodeId)
-	taregt, err := v.target(nodeId)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	var target string
+	r, err := v.etcdctl.Get(ctx, "/xiaomakai/"+volumeId)
 	if err != nil {
 		return err
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-	_, err = v.etcdctl.Put(ctx, "/xiaomakai/"+volumeId, taregt)
-	if err != nil {
-		return fmt.Errorf("etctctl put err:%w", err)
+	if r.Count == 0 {
+		_target, err := v.target(nodeId)
+		if err != nil {
+			return err
+		}
+		_, err = v.etcdctl.Put(ctx, "/xiaomakai/"+volumeId, _taregt)
+		if err != nil {
+			return fmt.Errorf("etctctl put err:%w", err)
+		}
+		target = _target
+	} else {
+		target = string(r.Kvs[0].Value)
 	}
+
 	cmd := fmt.Sprintf("virsh attach-disk %s %s %s --driver qemu --subdriver qcow2 --targetbus virtio",
-		nodeId, qcow2Path, taregt)
+		nodeId, qcow2Path, target)
 	log.Println(cmd)
 	out, err := exec.Command("sh", "-c", cmd).CombinedOutput()
 	if err != nil {
