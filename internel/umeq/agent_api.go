@@ -39,7 +39,7 @@ func (u *AgentService) UnpublishVolume(volumeId, nodeId string) error {
 	if err != nil {
 		return err
 	}
-	log.Println("unpublishVolume REST Resp:", string(respBody))
+	log.Println("[info] unpublishVolume", string(respBody))
 	return nil
 }
 
@@ -53,7 +53,7 @@ func (u *AgentService) PublishVolume(volumeId, nodeId string) error {
 	if res.StatusCode != 200 {
 		return errors.New(string(b))
 	}
-	log.Println("publishVolume resp:", string(b))
+	log.Println("[info] publishVolume", string(b))
 	return nil
 }
 
@@ -64,7 +64,7 @@ func (u *AgentService) CreateVolume(volumeId string, requiredBytes int64) error 
 	}
 	defer res.Body.Close()
 	b, _ := io.ReadAll(res.Body)
-	log.Println("createVolume resp:", string(b))
+	log.Println("[info] createVolume", string(b))
 	return nil
 }
 
@@ -86,7 +86,7 @@ func (u *AgentService) ExpandVolume(volumeId string, requiredBytes int64) error 
 	if err != nil {
 		return err
 	}
-	log.Println("expandVolume Resp:", string(respBody))
+	log.Println("[info] expandVolume", string(respBody))
 	return nil
 }
 
@@ -108,7 +108,7 @@ func (u *AgentService) DeleteVolume(volumeId string) error {
 	if err != nil {
 		return err
 	}
-	log.Println("deleteVolume Resp:", string(respBody))
+	log.Println("[info] deleteVolume", string(respBody))
 	return nil
 }
 
@@ -119,7 +119,7 @@ func (u *AgentService) GetDevPath(volumeId string) (string, error) {
 	}
 	defer res.Body.Close()
 	b, _ := io.ReadAll(res.Body)
-	log.Println("get dev-path resp:", string(b))
+	log.Println("[info] getDevPath", string(b))
 	return string(b), nil
 }
 
@@ -130,7 +130,7 @@ func (u *AgentService) GetCapacity() (*Capacity, error) {
 	}
 	defer res.Body.Close()
 	b, _ := io.ReadAll(res.Body)
-	log.Println("getCapacity resp:", string(b))
+	log.Println("[info] GetCapacity", string(b))
 	var cap Capacity
 	err = json.Unmarshal(b, &cap)
 	return &cap, err
@@ -143,7 +143,7 @@ func (u *AgentService) Probe() error {
 	}
 	defer res.Body.Close()
 	b, _ := io.ReadAll(res.Body)
-	log.Println("Probe resp:", string(b))
+	log.Println("[info] Probe", string(b))
 	return nil
 }
 

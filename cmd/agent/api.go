@@ -14,10 +14,14 @@ func Routing(app *iris.Application, agent *Agent) {
 		if err != nil {
 			ctx.StatusCode(500)
 			ctx.JSON(iris.Map{
-				"message": err.Error(),
+				"Message": err.Error(),
 			})
 			log.Println(err)
+			return
 		}
+		ctx.JSON(iris.Map{
+			"Message": "ok",
+		})
 	})
 
 	app.Put("/disk/{name:string}/{size:int64}", func(ctx iris.Context) {
@@ -26,7 +30,7 @@ func Routing(app *iris.Application, agent *Agent) {
 		if err != nil {
 			ctx.StatusCode(500)
 			ctx.JSON(iris.Map{
-				"message": err.Error(),
+				"Message": err.Error(),
 			})
 			log.Println(err)
 			return
@@ -35,10 +39,14 @@ func Routing(app *iris.Application, agent *Agent) {
 		if err != nil {
 			ctx.StatusCode(500)
 			ctx.JSON(iris.Map{
-				"message": err.Error(),
+				"Message": err.Error(),
 			})
 			log.Println(err)
+			return
 		}
+		ctx.JSON(iris.Map{
+			"Message": "ok",
+		})
 	})
 
 	app.Delete("/disk/{name:string}", func(ctx iris.Context) {
@@ -47,10 +55,14 @@ func Routing(app *iris.Application, agent *Agent) {
 		if err != nil {
 			ctx.StatusCode(500)
 			ctx.JSON(iris.Map{
-				"message": err.Error(),
+				"Message": err.Error(),
 			})
 			log.Println(err)
+			return
 		}
+		ctx.JSON(iris.Map{
+			"Message": "ok",
+		})
 	})
 
 	app.Post("/disk/{name:string}/publish/{node:string}", func(ctx iris.Context) {
@@ -60,10 +72,14 @@ func Routing(app *iris.Application, agent *Agent) {
 		if err != nil {
 			ctx.StatusCode(500)
 			ctx.JSON(iris.Map{
-				"message": err.Error(),
+				"Message": err.Error(),
 			})
 			log.Println(err)
+			return
 		}
+		ctx.JSON(iris.Map{
+			"Message": "ok",
+		})
 	})
 
 	app.Delete("/disk/{name:string}/publish/{node:string}", func(ctx iris.Context) {
@@ -73,10 +89,14 @@ func Routing(app *iris.Application, agent *Agent) {
 		if err != nil {
 			ctx.StatusCode(500)
 			ctx.JSON(iris.Map{
-				"message": err.Error(),
+				"Message": err.Error(),
 			})
 			log.Println(err)
+			return
 		}
+		ctx.JSON(iris.Map{
+			"Message": "ok",
+		})
 	})
 
 	app.Get("/dev-path/{name:string}", func(ctx iris.Context) {

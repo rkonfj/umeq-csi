@@ -40,13 +40,14 @@ func (a *CommonAttacher) unlock(nodeId string) error {
 }
 
 func (a *CommonAttacher) Clean(volumeId string) error {
+	log.Println("[info] request clean volume")
 	c, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	resp, err := a.etcdctl.Delete(c, "/xiaomakai/"+volumeId)
 	if err != nil {
-		log.Println("etcd delete ERR:", err)
+		log.Println("[etcd] delete ERR:", err)
 		return err
 	}
-	log.Printf("etcd resp:%v\n", resp)
+	log.Printf("[etcd] delete successfully! deleted: %d\n", resp.Deleted)
 	return nil
 }
