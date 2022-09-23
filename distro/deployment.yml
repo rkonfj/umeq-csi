@@ -1,3 +1,93 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: umeq-csi
+  namespace: kube-system
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: external-provisioner-runner
+rules:
+  - apiGroups: [""]
+    resources: ["persistentvolumes"]
+    verbs: ["get", "list", "watch", "create", "delete"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list", "watch", "update"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["storageclasses"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["list", "watch", "create", "update", "patch"]
+  - apiGroups: ["snapshot.storage.k8s.io"]
+    resources: ["volumesnapshots"]
+    verbs: ["get", "list"]
+  - apiGroups: ["snapshot.storage.k8s.io"]
+    resources: ["volumesnapshotcontents"]
+    verbs: ["get", "list"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["csinodes"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["volumeattachments"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["volumeattachments/status"]
+    verbs: ["patch"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: csi-provisioner-role
+subjects:
+  - kind: ServiceAccount
+    name: umeq-csi
+    namespace: kube-system
+roleRef:
+  kind: ClusterRole
+  name: external-provisioner-runner
+  apiGroup: rbac.authorization.k8s.io
+
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  namespace: kube-system
+  name: external-provisioner-cfg
+rules:
+- apiGroups: ["coordination.k8s.io"]
+  resources: ["leases"]
+  verbs: ["get", "watch", "list", "delete", "update", "create"]
+- apiGroups: ["storage.k8s.io"]
+  resources: ["csistoragecapacities"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get"]
+- apiGroups: ["apps"]
+  resources: ["replicasets"]
+  verbs: ["get"]
+
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: csi-provisioner-role-cfg
+  namespace: kube-system
+subjects:
+  - kind: ServiceAccount
+    name: umeq-csi
+    namespace: kube-system
+roleRef:
+  kind: Role
+  name: external-provisioner-cfg
+  apiGroup: rbac.authorization.k8s.io
+---
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -24,7 +114,6 @@ spec:
         - containerPort: 9809
           name: healthz
           protocol: TCP
-        resources: {}
         volumeMounts:
         - mountPath: /csi
           name: plugin-dir
@@ -43,9 +132,7 @@ spec:
               apiVersion: v1
               fieldPath: spec.nodeName
         image: kcr.xfs.pub/umeq-csi-plugin:1.0.3
-        imagePullPolicy: IfNotPresent
         name: umeq-csi
-        resources: {}
         securityContext:
           privileged: true
         volumeMounts:
@@ -56,10 +143,6 @@ spec:
           name: pods
         - mountPath: /dev/
           name: dev
-      dnsPolicy: ClusterFirst
-      restartPolicy: Always
-      schedulerName: default-scheduler
-      securityContext: {}
       volumes:
       - hostPath:
           path: /var/lib/kubelet/plugins_registry/
@@ -111,9 +194,7 @@ spec:
               apiVersion: v1
               fieldPath: metadata.name
         image: k8s.gcr.xfs.pub/sig-storage/csi-provisioner:v3.1.0
-        imagePullPolicy: IfNotPresent
         name: csi-provisioner
-        resources: {}
         volumeMounts:
         - mountPath: /var/lib/csi/sockets/umeq-csi.xiaomakai.com/
           name: socket-dir
@@ -129,13 +210,10 @@ spec:
               apiVersion: v1
               fieldPath: metadata.name
         image: k8s.gcr.xfs.pub/sig-storage/csi-attacher:v3.4.0
-        imagePullPolicy: IfNotPresent
         name: csi-attacher
         ports:
         - containerPort: 8080
           name: http-endpoint
-          protocol: TCP
-        resources: {}
         volumeMounts:
         - mountPath: /var/lib/csi/sockets/umeq-csi.xiaomakai.com/
           name: socket-dir
@@ -152,16 +230,12 @@ spec:
               apiVersion: v1
               fieldPath: spec.nodeName
         image: kcr.xfs.pub/umeq-csi-plugin:1.0.3
-        imagePullPolicy: IfNotPresent
         name: umeq-csi
-        resources: {}
         volumeMounts:
         - mountPath: /var/lib/csi/sockets/umeq-csi.xiaomakai.com/
           name: socket-dir
-      restartPolicy: Always
-      securityContext: {}
-      serviceAccount: csi-provisioner
-      serviceAccountName: csi-provisioner
+      serviceAccount: umeq-csi
+      serviceAccountName: umeq-csi
       volumes:
       - emptyDir: {}
         name: socket-dir
