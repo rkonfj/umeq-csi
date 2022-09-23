@@ -60,6 +60,7 @@ func (v *VirshAttacher) targetFromEtcd(volumeId string) (string, error) {
 }
 
 func (v *VirshAttacher) Attach(nodeId, volumeId, qcow2Path string) error {
+	log.Println("[info] virsh request attach", nodeId, volumeId, qcow2Path)
 	v.lock(nodeId)
 	defer v.unlock(nodeId)
 	taregt, err := v.target(nodeId)
@@ -84,6 +85,7 @@ func (v *VirshAttacher) Attach(nodeId, volumeId, qcow2Path string) error {
 }
 
 func (v *VirshAttacher) Detach(nodeId, volumeId string) error {
+	log.Println("[info] virsh request detach", nodeId, volumeId)
 	target, err := v.targetFromEtcd(volumeId)
 	if err != nil {
 		return err

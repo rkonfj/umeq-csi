@@ -84,6 +84,7 @@ func (q *QmpAttacher) exec(node, cmd string) error {
 }
 
 func (q *QmpAttacher) Attach(nodeId, volumeId, qcow2Path string) error {
+	log.Println("[info] qmp request attach", nodeId, volumeId, qcow2Path)
 	cmd := fmt.Sprintf("drive_add 0 if=none,format=qcow2,file=%s,id=%s", qcow2Path, volumeId)
 	err := q.exec(nodeId, cmd)
 	if err != nil {
@@ -118,6 +119,7 @@ func (q *QmpAttacher) Attach(nodeId, volumeId, qcow2Path string) error {
 }
 
 func (q *QmpAttacher) Detach(nodeId, volumeId string) error {
+	log.Println("[info] qmp request detach", nodeId, volumeId)
 	err := q.exec(nodeId, "device_del "+volumeId)
 	if err != nil {
 		err = q.exec(nodeId, "drive_del "+volumeId)
