@@ -57,7 +57,7 @@ probe:
 		log.Println("[warn] try request publish volume", req.VolumeId, c.NodeID)
 		err = c.Agent.PublishVolume(req.VolumeId, c.NodeID)
 		if err == nil {
-			time.Sleep(time.Second)
+			time.Sleep(time.Millisecond * 200)
 			goto probe
 		}
 		log.Println("[warn] publishVolume error", err)
