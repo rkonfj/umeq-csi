@@ -51,6 +51,7 @@ func Routing(app *iris.Application, agent *Agent) {
 		})
 	})
 
+	// delete volume
 	app.Delete("/disk/{name:string}", func(ctx iris.Context) {
 		name := ctx.Params().GetString("name")
 		err := agent.DeleteVolume(name)
@@ -67,6 +68,7 @@ func Routing(app *iris.Application, agent *Agent) {
 		})
 	})
 
+	// publish volume
 	app.Post("/disk/{name:string}/publish/{node:string}", func(ctx iris.Context) {
 		name := ctx.Params().GetString("name")
 		node := ctx.Params().GetString("node")
@@ -84,6 +86,7 @@ func Routing(app *iris.Application, agent *Agent) {
 		})
 	})
 
+	// unpublish volume
 	app.Delete("/disk/{name:string}/publish/{node:string}", func(ctx iris.Context) {
 		name := ctx.Params().GetString("name")
 		node := ctx.Params().GetString("node")
@@ -101,6 +104,7 @@ func Routing(app *iris.Application, agent *Agent) {
 		})
 	})
 
+	// get devpath
 	app.Get("/dev-path/{name:string}", func(ctx iris.Context) {
 		name := ctx.Params().GetString("name")
 		path, err := agent.GetDevPath(name)

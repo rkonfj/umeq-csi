@@ -55,6 +55,9 @@ func (a *Agent) PublishVolume(volumeId, nodeId string) error {
 }
 
 func (a *Agent) CreateVolume(kind, volumeId string, requiredBytes int64) error {
+	if len(kind) == 0 {
+		kind = "default"
+	}
 	qcowPath := a.storage[kind] + volumeId + ".qcow2"
 	err := a.saveVolumeKind(volumeId, kind)
 	if err != nil {
@@ -87,9 +90,6 @@ func (a *Agent) DeleteVolume(volumeId string) error {
 	qcowPath := a.lookupVolumePath(volumeId)
 	if err := os.Remove(qcowPath); err != nil {
 		return fmt.Errorf("delete qcow2 err:%w", err)
-	}
-	if err := a.attacher.Clean(volumeId); err != nil {
-		log.Println("[warn] attacher clean failed:" + err.Error())
 	}
 	if err := a.removeVolumeKind(volumeId); err != nil {
 		log.Println("[warn] volume kind state remove failed")

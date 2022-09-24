@@ -19,5 +19,5 @@ type CommonAttacher struct {
 
 func (a *CommonAttacher) Clean(volumeId string) error {
 	log.Println("[info] request clean volume")
-	return nil
+	return a.kv.Del("/xiaomakai/" + volumeId)
 }
