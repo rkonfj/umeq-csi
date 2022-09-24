@@ -58,6 +58,10 @@ func (a *Agent) CreateVolume(kind, volumeId string, requiredBytes int64) error {
 	if len(kind) == 0 {
 		kind = "default"
 	}
+	if _, ok := a.storage[kind]; !ok {
+		return fmt.Errorf("[error] volume %s create failed, storage kind %s not found",
+			volumeId, kind)
+	}
 	qcowPath := a.storage[kind] + volumeId + ".qcow2"
 	err := a.saveVolumeKind(volumeId, kind)
 	if err != nil {
@@ -66,7 +70,8 @@ func (a *Agent) CreateVolume(kind, volumeId string, requiredBytes int64) error {
 	if _, err := os.Stat(qcowPath); err == nil || !errors.Is(err, os.ErrNotExist) {
 		return fmt.Errorf("volume %s alredy exists", volumeId)
 	}
-	cmd := exec.Command("qemu-img", "create", "-f", "qcow2", qcowPath, fmt.Sprintf("%d", requiredBytes))
+	cmd := exec.Command("qemu-img", "create", "-f", "qcow2", qcowPath,
+		fmt.Sprintf("%d", requiredBytes))
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("create qcow2 err: %w %s", err, out)
 	} else {

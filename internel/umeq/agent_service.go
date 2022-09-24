@@ -67,6 +67,9 @@ func (u *AgentService) CreateVolume(kind string, volumeId string, requiredBytes 
 	}
 	defer res.Body.Close()
 	b, _ := io.ReadAll(res.Body)
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("[error] createVolume failed, caused %s", b)
+	}
 	log.Println("[info] createVolume", string(b))
 	return nil
 }

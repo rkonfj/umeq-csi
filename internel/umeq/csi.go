@@ -247,10 +247,9 @@ func (c *Csi) GetPluginCapabilities(ctx context.Context, req *csi.GetPluginCapab
 
 func (c *Csi) CreateVolume(ctx context.Context, req *csi.CreateVolumeRequest) (resp *csi.CreateVolumeResponse, finalErr error) {
 	log.Printf("CreateVolume %v", req)
-
-	err := c.Agent.CreateVolume(req.Parameters["kind"], req.Name, req.CapacityRange.RequiredBytes)
-	if err != nil {
-		log.Printf("ERR:%s", err)
+	if err := c.Agent.CreateVolume(req.Parameters["kind"], req.Name, req.CapacityRange.RequiredBytes); err != nil {
+		log.Println(err)
+		return nil, err
 	}
 
 	return &csi.CreateVolumeResponse{
