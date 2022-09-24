@@ -8,11 +8,4 @@ socks:
   path: /run/k3.mon.sock
 storage:
   default: /fs/trust/vm/csi/
-etcd:
-  endpoints: 
-  - https://192.168.3.35:2379
-  - https://192.168.3.36:2379
-  - https://192.168.3.43:2379
-  cert: etcd.crt
-  key: etcd.key
-  ca: etcd-ca.crt
+

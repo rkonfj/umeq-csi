@@ -1,7 +1,6 @@
 package attach
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"os"
@@ -9,7 +8,7 @@ import (
 	"time"
 
 	"github.com/tasselsd/umeq-csi/internel/qmp"
-	clientv3 "go.etcd.io/etcd/client/v3"
+	"github.com/tasselsd/umeq-csi/internel/state"
 )
 
 type QmpAttacher struct {
@@ -22,10 +21,10 @@ type Sock struct {
 	Path string
 }
 
-func NewQmpAttacher(etcdctl *clientv3.Client, qs []Sock) *QmpAttacher {
+func NewQmpAttacher(kv state.KvStore, qs []Sock) *QmpAttacher {
 	attacher := &QmpAttacher{
 		CommonAttacher: CommonAttacher{
-			etcdctl: etcdctl,
+			kv: kv,
 		},
 		mons: make(map[string]*qmp.Monitor),
 	}
@@ -40,29 +39,26 @@ func NewQmpAttacher(etcdctl *clientv3.Client, qs []Sock) *QmpAttacher {
 		attacher.mons[q.Name] = mon
 	}
 	if len(attacher.mons) == 0 {
-		panic("non normal mons, exiting...")
+		panic("no any normal mons found, exiting...")
 	}
 	return attacher
 }
 
 func (q *QmpAttacher) nextSeq() string {
-	q.lock("/global")
-	defer q.unlock("/global")
-	c, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	r, err := q.etcdctl.Get(c, "/xiaomakai/id")
+	q.kv.Lock("global")
+	defer q.kv.Unlock("global")
+	r, err := q.kv.Get("/xiaomakai/id")
+	if err != nil {
+		q.kv.Set("/xiaomakai/id", []byte("1"))
+		return "0"
+	}
+	seq := string(r)
+	val, err := strconv.ParseInt(seq, 10, 64)
 	if err != nil {
 		panic(err)
 	}
-	if r.Count == 0 {
-		q.etcdctl.Put(c, "/xiaomakai/id", "1")
-	} else {
-		value, _ := strconv.Atoi(string(r.Kvs[0].Value))
-		value += 1
-		q.etcdctl.Put(c, "/xiaomakai/id", fmt.Sprintf("%d", value))
-		return string(r.Kvs[0].Value)
-	}
-	return "0"
+	q.kv.Set("/xiaomakai/id", []byte(fmt.Sprintf("%d", val+1)))
+	return seq
 }
 
 func (q *QmpAttacher) exec(node, cmd string) error {
@@ -95,22 +91,17 @@ func (q *QmpAttacher) Attach(nodeId, volumeId, qcow2Path string) error {
 		os.Exit(1)
 	}
 
-	c, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
 	var serialId string
-	r, err := q.etcdctl.Get(c, "/xiaomakai/"+volumeId)
+	r, err := q.kv.Get("/xiaomakai/" + volumeId)
 	if err != nil {
-		return err
-	}
-	if r.Count == 0 {
 		id := q.nextSeq()
-		_, err := q.etcdctl.Put(c, "/xiaomakai/"+volumeId, id)
+		err = q.kv.Set("/xiaomakai/"+volumeId, []byte(id))
 		if err != nil {
 			return err
 		}
 		serialId = id
 	} else {
-		serialId = string(r.Kvs[0].Value)
+		serialId = string(r)
 	}
 	cmd2 := fmt.Sprintf("device_add virtio-blk-pci,drive=%s,id=%s,serial=%s",
 		volumeId, volumeId, serialId)
@@ -139,14 +130,9 @@ func (q *QmpAttacher) Detach(nodeId, volumeId string) error {
 }
 
 func (q *QmpAttacher) DevPath(volumeId string) (string, error) {
-	c, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-	r, err := q.etcdctl.Get(c, "/xiaomakai/"+volumeId)
+	r, err := q.kv.Get("/xiaomakai/" + volumeId)
 	if err != nil {
-		panic(err)
-	}
-	if r.Count == 0 {
 		return "", fmt.Errorf("volume %s not found! not attach yet?", volumeId)
 	}
-	return "/dev/disk/by-id/virtio-" + string(r.Kvs[0].Value), nil
+	return "/dev/disk/by-id/virtio-" + string(r), nil
 }

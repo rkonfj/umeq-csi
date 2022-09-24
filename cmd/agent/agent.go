@@ -26,19 +26,23 @@ func NewAgent(storage map[string]string, kv state.KvStore, attacher attach.Attac
 }
 
 func (a *Agent) saveVolumeKind(volumeId, kind string) error {
-	return a.kv.Set(volumeId, []byte(kind))
+	return a.kv.Set("kind-"+volumeId, []byte(kind))
 }
 
 func (a *Agent) removeVolumeKind(volumeId string) error {
-	return a.kv.Del(volumeId)
+	return a.kv.Del("kind-" + volumeId)
 }
 
-func (a *Agent) lookupVolumePath(volumeId string) (string, error) {
-	b, err := a.kv.Get(volumeId)
+func (a *Agent) lookupVolumePath(volumeId string) string {
+	kind := "default"
+	b, err := a.kv.Get("kind-" + volumeId)
 	if err != nil {
-		return "", err
+		log.Println("[warn] lookupVolumePath failed, fallback to [default]:", err)
+	} else {
+		kind = string(b)
 	}
-	return a.storage[string(b)] + volumeId + ".qcow2", nil
+	log.Println("[info] lookup volumeId", volumeId, "kind is", kind)
+	return a.storage[kind] + volumeId + ".qcow2"
 }
 
 func (a *Agent) UnpublishVolume(volumeId, nodeId string) error {
@@ -46,10 +50,7 @@ func (a *Agent) UnpublishVolume(volumeId, nodeId string) error {
 }
 
 func (a *Agent) PublishVolume(volumeId, nodeId string) error {
-	qcow2Path, err := a.lookupVolumePath(volumeId)
-	if err != nil {
-		return err
-	}
+	qcow2Path := a.lookupVolumePath(volumeId)
 	return a.attacher.Attach(nodeId, volumeId, qcow2Path)
 }
 
@@ -72,10 +73,7 @@ func (a *Agent) CreateVolume(kind, volumeId string, requiredBytes int64) error {
 }
 
 func (a *Agent) ExpandVolume(volumeId string, requiredBytes int64) error {
-	qcowPath, err := a.lookupVolumePath(volumeId)
-	if err != nil {
-		return err
-	}
+	qcowPath := a.lookupVolumePath(volumeId)
 	cmd := exec.Command("qemu-img", "resize", qcowPath, fmt.Sprintf("%d", requiredBytes))
 	if out, err := cmd.Output(); err != nil {
 		return err
@@ -86,10 +84,7 @@ func (a *Agent) ExpandVolume(volumeId string, requiredBytes int64) error {
 }
 
 func (a *Agent) DeleteVolume(volumeId string) error {
-	qcowPath, err := a.lookupVolumePath(volumeId)
-	if err != nil {
-		return err
-	}
+	qcowPath := a.lookupVolumePath(volumeId)
 	if err := os.Remove(qcowPath); err != nil {
 		return fmt.Errorf("delete qcow2 err:%w", err)
 	}

@@ -1,24 +1,22 @@
 package attach
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"os/exec"
 	"strings"
-	"time"
 
-	clientv3 "go.etcd.io/etcd/client/v3"
+	"github.com/tasselsd/umeq-csi/internel/state"
 )
 
 type VirshAttacher struct {
 	CommonAttacher
 }
 
-func NewVirshAttacher(etcdctl *clientv3.Client) *VirshAttacher {
+func NewVirshAttacher(kv state.KvStore) *VirshAttacher {
 	return &VirshAttacher{
 		CommonAttacher: CommonAttacher{
-			etcdctl: etcdctl,
+			kv: kv,
 		},
 	}
 }
@@ -47,41 +45,31 @@ probe:
 }
 
 func (v *VirshAttacher) targetFromEtcd(volumeId string) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-	resp, err := v.etcdctl.Get(ctx, "/xiaomakai/"+volumeId)
+	resp, err := v.kv.Get("/xiaomakai/" + volumeId)
 	if err != nil {
-		return "", err
-	}
-	if resp.Count == 0 {
 		return "", fmt.Errorf("not attach %s yet?", volumeId)
 	}
-	return string(resp.Kvs[0].Value), nil
+	return string(resp), nil
 }
 
 func (v *VirshAttacher) Attach(nodeId, volumeId, qcow2Path string) error {
 	log.Println("[info] virsh request attach", nodeId, volumeId, qcow2Path)
-	v.lock(nodeId)
-	defer v.unlock(nodeId)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
+	v.kv.Lock(nodeId)
+	defer v.kv.Unlock(nodeId)
 	var target string
-	r, err := v.etcdctl.Get(ctx, "/xiaomakai/"+volumeId)
+	r, err := v.kv.Get("/xiaomakai/" + volumeId)
 	if err != nil {
-		return err
-	}
-	if r.Count == 0 {
 		_target, err := v.target(nodeId)
 		if err != nil {
 			return err
 		}
-		_, err = v.etcdctl.Put(ctx, "/xiaomakai/"+volumeId, _target)
+		err = v.kv.Set("/xiaomakai/"+volumeId, []byte(_target))
 		if err != nil {
-			return fmt.Errorf("etctctl put err:%w", err)
+			return fmt.Errorf("[error] kvStore set err: %w", err)
 		}
 		target = _target
 	} else {
-		target = string(r.Kvs[0].Value)
+		target = string(r)
 	}
 
 	cmd := fmt.Sprintf("virsh attach-disk %s %s %s --driver qemu --subdriver qcow2 --targetbus virtio",
