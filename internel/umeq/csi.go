@@ -309,7 +309,7 @@ func (c *Csi) ControllerPublishVolume(ctx context.Context, req *csi.ControllerPu
 		return nil, err
 	}
 	return &csi.ControllerPublishVolumeResponse{
-		PublishContext: map[string]string{},
+		PublishContext: req.VolumeContext,
 	}, nil
 }
 
