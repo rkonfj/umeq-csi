@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/glog"
@@ -47,16 +48,16 @@ func (c *Csi) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeR
 	}
 
 	targetPath := req.GetTargetPath()
-
+probe:
 	path, err := c.Agent.GetDevPath(req.VolumeId)
 	if err != nil {
 		return nil, fmt.Errorf("get dev-path err: %w", err)
 	}
-probe:
 	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
 		log.Println("[warn] try request publish volume", req.VolumeId, c.NodeID)
 		err = c.Agent.PublishVolume(req.VolumeId, c.NodeID)
 		if err == nil {
+			time.Sleep(time.Second)
 			goto probe
 		}
 		log.Println("[warn] publishVolume error", err)

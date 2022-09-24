@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"strconv"
 	"time"
 
@@ -38,7 +39,9 @@ func NewQmpAttacher(etcdctl *clientv3.Client, qs []Sock) *QmpAttacher {
 		log.Printf("Registered %s -> %s\n", q.Name, q.Path)
 		attacher.mons[q.Name] = mon
 	}
-
+	if len(attacher.mons) == 0 {
+		panic("non normal mons, exiting...")
+	}
 	return attacher
 }
 
@@ -88,7 +91,8 @@ func (q *QmpAttacher) Attach(nodeId, volumeId, qcow2Path string) error {
 	cmd := fmt.Sprintf("drive_add 0 if=none,format=qcow2,file=%s,id=%s", qcow2Path, volumeId)
 	err := q.exec(nodeId, cmd)
 	if err != nil {
-		return fmt.Errorf("attach[drive_add] err:%w", err)
+		log.Println("[error] exiting", err)
+		os.Exit(1)
 	}
 
 	c, cancel := context.WithTimeout(context.Background(), 3*time.Second)

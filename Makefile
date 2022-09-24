@@ -1,8 +1,8 @@
 all: agent plugin
 plugin:
 	cd cmd/plugin;go build -ldflags "-s -w";\
-	docker build . -t kcr.xfs.pub/umeq-csi-plugin:1.0.6;\
-	docker push kcr.xfs.pub/umeq-csi-plugin:1.0.6
+	docker build . -t kcr.xfs.pub/umeq-csi-plugin:1.0.8;\
+	docker push kcr.xfs.pub/umeq-csi-plugin:1.0.8
 agent:
 	cd cmd/agent;\
 	go build -ldflags "-s -w";\
