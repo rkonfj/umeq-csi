@@ -82,7 +82,7 @@ func (q *QmpAttacher) exec(node, cmd string) error {
 	}, &out); err != nil {
 		return err
 	}
-	log.Printf("[qmp]node: %s, cmd: %s, out: %s\n", node, cmd, out)
+	log.Printf("[qmp] node: %s, cmd: %s, out: %s\n", node, cmd, out)
 	return nil
 }
 
