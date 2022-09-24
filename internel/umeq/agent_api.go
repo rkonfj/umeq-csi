@@ -119,7 +119,7 @@ func (u *AgentService) GetDevPath(volumeId string) (string, error) {
 	}
 	defer res.Body.Close()
 	b, _ := io.ReadAll(res.Body)
-	log.Println("[info] getDevPath", string(b))
+	log.Println("[info] devicePath", string(b))
 	return string(b), nil
 }
 

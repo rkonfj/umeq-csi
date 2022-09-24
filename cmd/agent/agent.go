@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -32,9 +33,12 @@ func (a *Agent) PublishVolume(volumeId, nodeId string) error {
 
 func (a *Agent) CreateVolume(volumeId string, requiredBytes int64) error {
 	qcowPath := a.diskRoot + volumeId + ".qcow2"
+	if _, err := os.Stat(qcowPath); err == nil || !errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("volume %s alredy exists", volumeId)
+	}
 	cmd := exec.Command("qemu-img", "create", "-f", "qcow2", qcowPath, fmt.Sprintf("%d", requiredBytes))
-	if out, err := cmd.Output(); err != nil {
-		return fmt.Errorf("create qcow2 err:%w", err)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("create qcow2 err: %w %s", err, out)
 	} else {
 		log.Println("create qcow2:", string(out))
 	}
