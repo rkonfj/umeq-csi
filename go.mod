@@ -6,6 +6,7 @@ require (
 	github.com/container-storage-interface/spec v1.6.0
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/kataras/iris/v12 v12.1.8
+	github.com/spf13/cobra v1.5.0
 	go.etcd.io/etcd v3.3.27+incompatible
 	go.etcd.io/etcd/client/v3 v3.5.4
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f
@@ -53,7 +54,6 @@ require (
 	github.com/sergi/go-diff v1.2.0 // indirect
 	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
 	github.com/smartystreets/goconvey v1.7.2 // indirect
-	github.com/spf13/cobra v1.5.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/valyala/fasthttp v1.39.0 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
