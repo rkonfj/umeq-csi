@@ -52,8 +52,14 @@ func (c *Csi) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeR
 	if err != nil {
 		return nil, fmt.Errorf("get dev-path err: %w", err)
 	}
-
+probe:
 	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
+		log.Println("[warn] try request publish volume", req.VolumeId, c.NodeID)
+		err = c.Agent.PublishVolume(req.VolumeId, c.NodeID)
+		if err == nil {
+			goto probe
+		}
+		log.Println("[warn] publishVolume error", err)
 		return nil, fmt.Errorf("%s not ready yet", path)
 	}
 

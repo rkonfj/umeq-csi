@@ -119,6 +119,9 @@ func (u *AgentService) GetDevPath(volumeId string) (string, error) {
 	}
 	defer res.Body.Close()
 	b, _ := io.ReadAll(res.Body)
+	if res.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("get dev path error: %s", b)
+	}
 	log.Println("[info] devicePath", string(b))
 	return string(b), nil
 }
