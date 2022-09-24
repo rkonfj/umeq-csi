@@ -7,10 +7,12 @@ import (
 )
 
 func Routing(app *iris.Application, agent *Agent) {
-	app.Post("/disk/{name:string}/{size:int64}", func(ctx iris.Context) {
+	// create volume
+	app.Post("/kind/{kind:string}/disk/{name:string}/{size:int64}", func(ctx iris.Context) {
+		kind := ctx.Params().GetStringDefault("kind", "default")
 		name := ctx.Params().GetString("name")
 		size := ctx.Params().GetInt64Default("size", 1024*1024*10)
-		err := agent.CreateVolume(name, size)
+		err := agent.CreateVolume(kind, name, size)
 		if err != nil {
 			ctx.StatusCode(500)
 			ctx.JSON(iris.Map{

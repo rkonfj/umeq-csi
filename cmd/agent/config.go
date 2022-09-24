@@ -2,15 +2,11 @@ package main
 
 import (
 	"os"
+	"path/filepath"
 
 	"github.com/tasselsd/umeq-csi/internel/attach"
 	"gopkg.in/yaml.v3"
 )
-
-type Qmp struct {
-	Name string
-	Sock string
-}
 
 type Etcd struct {
 	Endpoints []string
@@ -21,7 +17,8 @@ type Etcd struct {
 
 type Config struct {
 	Socks      []attach.Sock
-	ImagePath  string `yaml:"imagePath"`
+	Storage    map[string]string
+	StatePath  string
 	Etcd       Etcd
 	ServerPort int `yaml:"serverPort"`
 }
@@ -38,11 +35,18 @@ func init() {
 		panic(err)
 	}
 	// Default Config
-	if config.ImagePath == "" {
-		panic("config.imagePath is required!")
+	if _, ok := config.Storage["default"]; !ok {
+		panic("config.storage.default is required!")
 	}
 	if len(config.Etcd.Endpoints) == 0 {
 		panic("config.etcd.endpoints is required!")
+	}
+	if config.StatePath == "" {
+		cwd, err := os.Getwd()
+		if err != nil {
+			panic(err)
+		}
+		config.StatePath = filepath.Join(cwd, ".state")
 	}
 	if config.Etcd.Cert == "" {
 		config.Etcd.Cert = "etcd.crt"

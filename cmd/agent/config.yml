@@ -6,7 +6,8 @@ socks:
   path: /run/k2.mon.sock
 - name: k3
   path: /run/k3.mon.sock
-imagePath: /fs/trust/vm/csi/
+storage:
+  default: /fs/trust/vm/csi/
 etcd:
   endpoints: 
   - https://192.168.3.35:2379

@@ -25,7 +25,7 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
-			err = agent.CreateVolume(args[0], bytes)
+			err = agent.CreateVolume("default", args[0], bytes)
 			if err != nil {
 				panic(err)
 			}

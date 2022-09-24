@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/container-storage-interface/spec v1.6.0
+	github.com/gofrs/flock v0.8.1
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/kataras/iris/v12 v12.1.8
 	github.com/spf13/cobra v1.5.0
@@ -66,7 +67,7 @@ require (
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.17.0 // indirect
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292 // indirect
-	golang.org/x/sys v0.0.0-20220227234510-4e6760a101f9 // indirect
+	golang.org/x/sys v0.0.0-20220919091848-fb04ddd9f9c8 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c // indirect
 	gopkg.in/ini.v1 v1.51.1 // indirect

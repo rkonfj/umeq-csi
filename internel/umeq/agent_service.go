@@ -44,7 +44,8 @@ func (u *AgentService) UnpublishVolume(volumeId, nodeId string) error {
 }
 
 func (u *AgentService) PublishVolume(volumeId, nodeId string) error {
-	res, err := http.Post(fmt.Sprintf("%s/disk/%s/publish/%s", u.AgentServer, volumeId, nodeId), "application/x-www-form-urlencoded", nil)
+	res, err := http.Post(fmt.Sprintf("%s/disk/%s/publish/%s",
+		u.AgentServer, volumeId, nodeId), "application/x-www-form-urlencoded", nil)
 	if err != nil {
 		return fmt.Errorf("publish disk err:%s", err.Error())
 	}
@@ -57,8 +58,10 @@ func (u *AgentService) PublishVolume(volumeId, nodeId string) error {
 	return nil
 }
 
-func (u *AgentService) CreateVolume(volumeId string, requiredBytes int64) error {
-	res, err := http.Post(fmt.Sprintf("%s/disk/%s/%d", u.AgentServer, volumeId, requiredBytes), "application/x-www-form-urlencoded", nil)
+func (u *AgentService) CreateVolume(kind string, volumeId string, requiredBytes int64) error {
+	res, err := http.Post(fmt.Sprintf("%s/kind/%s/disk/%s/%d",
+		u.AgentServer, kind, volumeId, requiredBytes),
+		"application/x-www-form-urlencoded", nil)
 	if err != nil {
 		return fmt.Errorf("create disk err:%s", err.Error())
 	}

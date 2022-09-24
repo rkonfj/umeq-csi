@@ -8,18 +8,37 @@ import (
 	"os/exec"
 
 	"github.com/tasselsd/umeq-csi/internel/attach"
+	"github.com/tasselsd/umeq-csi/internel/state"
 )
 
 type Agent struct {
-	diskRoot string
+	storage  map[string]string
+	kv       state.KvStore
 	attacher attach.Attacher
 }
 
-func NewAgent(diskRoot string, attacher attach.Attacher) *Agent {
+func NewAgent(storage map[string]string, kv state.KvStore, attacher attach.Attacher) *Agent {
 	return &Agent{
-		diskRoot: diskRoot,
+		storage:  storage,
+		kv:       kv,
 		attacher: attacher,
 	}
+}
+
+func (a *Agent) saveVolumeKind(volumeId, kind string) error {
+	return a.kv.Set(volumeId, []byte(kind))
+}
+
+func (a *Agent) removeVolumeKind(volumeId string) error {
+	return a.kv.Del(volumeId)
+}
+
+func (a *Agent) lookupVolumePath(volumeId string) (string, error) {
+	b, err := a.kv.Get(volumeId)
+	if err != nil {
+		return "", err
+	}
+	return a.storage[string(b)] + volumeId + ".qcow2", nil
 }
 
 func (a *Agent) UnpublishVolume(volumeId, nodeId string) error {
@@ -27,12 +46,19 @@ func (a *Agent) UnpublishVolume(volumeId, nodeId string) error {
 }
 
 func (a *Agent) PublishVolume(volumeId, nodeId string) error {
-	qcow2Path := a.diskRoot + volumeId + ".qcow2"
+	qcow2Path, err := a.lookupVolumePath(volumeId)
+	if err != nil {
+		return err
+	}
 	return a.attacher.Attach(nodeId, volumeId, qcow2Path)
 }
 
-func (a *Agent) CreateVolume(volumeId string, requiredBytes int64) error {
-	qcowPath := a.diskRoot + volumeId + ".qcow2"
+func (a *Agent) CreateVolume(kind, volumeId string, requiredBytes int64) error {
+	qcowPath := a.storage[kind] + volumeId + ".qcow2"
+	err := a.saveVolumeKind(volumeId, kind)
+	if err != nil {
+		panic(err)
+	}
 	if _, err := os.Stat(qcowPath); err == nil || !errors.Is(err, os.ErrNotExist) {
 		return fmt.Errorf("volume %s alredy exists", volumeId)
 	}
@@ -46,7 +72,10 @@ func (a *Agent) CreateVolume(volumeId string, requiredBytes int64) error {
 }
 
 func (a *Agent) ExpandVolume(volumeId string, requiredBytes int64) error {
-	qcowPath := a.diskRoot + volumeId + ".qcow2"
+	qcowPath, err := a.lookupVolumePath(volumeId)
+	if err != nil {
+		return err
+	}
 	cmd := exec.Command("qemu-img", "resize", qcowPath, fmt.Sprintf("%d", requiredBytes))
 	if out, err := cmd.Output(); err != nil {
 		return err
@@ -57,13 +86,18 @@ func (a *Agent) ExpandVolume(volumeId string, requiredBytes int64) error {
 }
 
 func (a *Agent) DeleteVolume(volumeId string) error {
-	err := os.Remove(a.diskRoot + volumeId + ".qcow2")
+	qcowPath, err := a.lookupVolumePath(volumeId)
 	if err != nil {
+		return err
+	}
+	if err := os.Remove(qcowPath); err != nil {
 		return fmt.Errorf("delete qcow2 err:%w", err)
 	}
-	err = a.attacher.Clean(volumeId)
-	if err != nil {
-		log.Println("ERROR: " + err.Error())
+	if err := a.attacher.Clean(volumeId); err != nil {
+		log.Println("[warn] attacher clean failed:" + err.Error())
+	}
+	if err := a.removeVolumeKind(volumeId); err != nil {
+		log.Println("[warn] volume kind state remove failed")
 	}
 	log.Println("Removed volume:", volumeId)
 	return nil

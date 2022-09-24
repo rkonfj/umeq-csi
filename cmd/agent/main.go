@@ -3,10 +3,12 @@ package main
 import (
 	"fmt"
 	"log"
+	"path/filepath"
 	"time"
 
 	"github.com/kataras/iris/v12"
 	"github.com/tasselsd/umeq-csi/internel/attach"
+	"github.com/tasselsd/umeq-csi/internel/state"
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"go.etcd.io/etcd/pkg/transport"
 )
@@ -44,7 +46,8 @@ func main() {
 		attacher = attach.NewQmpAttacher(cli, config.Socks)
 	}
 
-	agent := NewAgent(config.ImagePath, attacher)
+	kv := state.NewFsKvStore(filepath.Join(config.StatePath, "kind"))
+	agent := NewAgent(config.Storage, kv, attacher)
 
 	Routing(app, agent)
 
