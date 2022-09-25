@@ -53,13 +53,13 @@ func (v *VirshAttacher) lookupTarget(volumeId string) (string, error) {
 }
 
 func (v *VirshAttacher) generateTarget(nodeId, volumeId string) (string, error) {
-	r, err := v.kv.Get("/xiaomakai/virsh/target" + volumeId)
+	r, err := v.kv.Get("/xiaomakai/virsh/target/" + volumeId)
 	if err != nil {
 		_target, err := v.target(nodeId)
 		if err != nil {
 			return "", err
 		}
-		err = v.kv.Set("/xiaomakai/virsh/target"+volumeId, []byte(_target))
+		err = v.kv.Set("/xiaomakai/virsh/target/"+volumeId, []byte(_target))
 		if err != nil {
 			return "", fmt.Errorf("[error] kvStore set err: %w", err)
 		}
@@ -106,5 +106,16 @@ func (v *VirshAttacher) Detach(nodeId, volumeId string) error {
 	}
 	log.Println(string(out))
 	v.Clean(volumeId)
+	return nil
+}
+func (v *VirshAttacher) Clean(volumeId string) error {
+	err1 := v.CommonAttacher.Clean(volumeId)
+	err2 := v.kv.Del("/xiaomakai/virsh/target/" + volumeId)
+	if err1 != nil {
+		return err1
+	}
+	if err2 != nil {
+		return err2
+	}
 	return nil
 }

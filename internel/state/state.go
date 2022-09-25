@@ -108,7 +108,7 @@ func (kv *FsKvStore) Unlock(key string) error {
 	defer kv.l.Unlock()
 	if l, ok := kv.lMap[key]; ok {
 		l.Unlock()
-		kv.lMap[key] = nil
+		delete(kv.lMap, key)
 		return nil
 	}
 	return nil
