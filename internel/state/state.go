@@ -92,7 +92,7 @@ func (kv *FsKvStore) List() ([]*KV, error) {
 
 func (kv *FsKvStore) Lock(key string) error {
 	kv.l.Lock()
-	defer kv.l.Lock()
+	defer kv.l.Unlock()
 	if l, ok := kv.lMap[key]; ok {
 		l.Lock()
 		return nil
