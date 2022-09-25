@@ -25,7 +25,7 @@ func (v *VirshAttacher) target(nodeId string) (string, error) {
 	cmd := fmt.Sprintf("virsh domblklist %s | tail -n +3 | awk '{print $1}'", nodeId)
 	out, err := exec.Command("sh", "-c", cmd).Output()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("[error] virsh domblklist error %w", err)
 	}
 	existsTargets := strings.Split(string(out), "\n")
 	targetLetter := byte('a')
@@ -45,35 +45,45 @@ probe:
 }
 
 func (v *VirshAttacher) lookupTarget(volumeId string) (string, error) {
-	resp, err := v.kv.Get("/xiaomakai/" + volumeId)
+	resp, err := v.kv.Get("/xiaomakai/virsh/target" + volumeId)
 	if err != nil {
 		return "", fmt.Errorf("[error] virsh not attach %s yet?", volumeId)
 	}
 	return string(resp), nil
 }
 
+func (v *VirshAttacher) generateTarget(nodeId, volumeId string) (string, error) {
+	r, err := v.kv.Get("/xiaomakai/virsh/target" + volumeId)
+	if err != nil {
+		_target, err := v.target(nodeId)
+		if err != nil {
+			return "", err
+		}
+		err = v.kv.Set("/xiaomakai/virsh/target"+volumeId, []byte(_target))
+		if err != nil {
+			return "", fmt.Errorf("[error] kvStore set err: %w", err)
+		}
+		return _target, nil
+	}
+	return string(r), nil
+}
+
 func (v *VirshAttacher) Attach(nodeId, volumeId, qcow2Path string) error {
 	log.Println("[info] virsh request attach", nodeId, volumeId, qcow2Path)
 	v.kv.Lock(nodeId)
 	defer v.kv.Unlock(nodeId)
-	var target string
-	r, err := v.kv.Get("/xiaomakai/" + volumeId)
+	target, err := v.generateTarget(nodeId, volumeId)
 	if err != nil {
-		_target, err := v.target(nodeId)
-		if err != nil {
-			return err
-		}
-		err = v.kv.Set("/xiaomakai/"+volumeId, []byte(_target))
-		if err != nil {
-			return fmt.Errorf("[error] kvStore set err: %w", err)
-		}
-		target = _target
-	} else {
-		target = string(r)
+		return err
+	}
+	serialId, err := v.getSerialId(volumeId)
+	if err != nil {
+		return err
 	}
 
-	cmd := fmt.Sprintf("virsh attach-disk %s %s %s --driver qemu --subdriver qcow2 --targetbus virtio",
-		nodeId, qcow2Path, target)
+	cmd := fmt.Sprintf(
+		"virsh attach-disk %s %s %s --driver qemu --subdriver qcow2 --targetbus virtio --serial %s",
+		nodeId, qcow2Path, target, serialId)
 	log.Println(cmd)
 	out, err := exec.Command("sh", "-c", cmd).CombinedOutput()
 	if err != nil {
@@ -97,12 +107,4 @@ func (v *VirshAttacher) Detach(nodeId, volumeId string) error {
 	log.Println(string(out))
 	v.Clean(volumeId)
 	return nil
-}
-
-func (v *VirshAttacher) DevPath(volumeId string) (string, error) {
-	target, err := v.lookupTarget(volumeId)
-	if err != nil {
-		return "", err
-	}
-	return "/dev/" + target, nil
 }
