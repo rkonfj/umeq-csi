@@ -26,6 +26,7 @@ type KvStore interface {
 type FsKvStore struct {
 	root string
 	l    sync.Locker
+	lMap map[string]sync.Locker
 }
 
 func NewFsKvStore(root string) KvStore {
@@ -36,9 +37,11 @@ func NewFsKvStore(root string) KvStore {
 		}
 	}
 
+	lMap := make(map[string]sync.Locker)
 	kv := &FsKvStore{
 		root: root,
 		l:    &sync.Mutex{},
+		lMap: lMap,
 	}
 
 	return kv
@@ -89,10 +92,24 @@ func (kv *FsKvStore) List() ([]*KV, error) {
 
 func (kv *FsKvStore) Lock(key string) error {
 	kv.l.Lock()
+	defer kv.l.Lock()
+	if l, ok := kv.lMap[key]; ok {
+		l.Lock()
+		return nil
+	}
+	l := &sync.Mutex{}
+	kv.lMap[key] = l
+	l.Lock()
 	return nil
 }
 
 func (kv *FsKvStore) Unlock(key string) error {
-	kv.l.Unlock()
+	kv.l.Lock()
+	defer kv.l.Unlock()
+	if l, ok := kv.lMap[key]; ok {
+		l.Unlock()
+		kv.lMap[key] = nil
+		return nil
+	}
 	return nil
 }
