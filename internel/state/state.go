@@ -9,12 +9,18 @@ import (
 	"sync"
 )
 
+type KV struct {
+	Key   string
+	Value []byte
+}
+
 type KvStore interface {
 	Set(key string, value []byte) error
 	Get(key string) ([]byte, error)
 	Del(key string) error
 	Lock(key string) error
 	Unlock(key string) error
+	List() ([]*KV, error)
 }
 
 type FsKvStore struct {
@@ -44,6 +50,12 @@ func (kv *FsKvStore) encode(key string) string {
 	return string(dst)
 }
 
+func (kv *FsKvStore) decode(key string) string {
+	dst := make([]byte, hex.DecodedLen(len(key)))
+	hex.Decode(dst, []byte(key))
+	return string(dst)
+}
+
 func (kv *FsKvStore) Set(key string, value []byte) error {
 	return os.WriteFile(filepath.Join(kv.root, kv.encode(key)), value, 0600)
 }
@@ -57,6 +69,22 @@ func (kv *FsKvStore) Get(key string) ([]byte, error) {
 
 func (kv *FsKvStore) Del(key string) error {
 	return os.Remove(filepath.Join(kv.root, kv.encode(key)))
+}
+
+func (kv *FsKvStore) List() ([]*KV, error) {
+	files, err := os.ReadDir(kv.root)
+	if err != nil {
+		return nil, err
+	}
+	var kvs []*KV
+	for _, f := range files {
+		b, _ := os.ReadFile(filepath.Join(kv.root, f.Name()))
+		kvs = append(kvs, &KV{
+			Key:   kv.decode(f.Name()),
+			Value: b,
+		})
+	}
+	return kvs, nil
 }
 
 func (kv *FsKvStore) Lock(key string) error {

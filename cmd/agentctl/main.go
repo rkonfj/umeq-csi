@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/spf13/cobra"
+	"github.com/tasselsd/umeq-csi/internel/state"
 	"github.com/tasselsd/umeq-csi/internel/umeq"
 )
 
@@ -65,8 +66,25 @@ func main() {
 			}
 		}}
 
+	var kvCmd = &cobra.Command{
+		Use:   "fskv <fsPath>",
+		Short: "list filesystem kvStore content",
+		Long:  "avaiable store is agent and attacher",
+		Args:  cobra.MinimumNArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			kv := state.NewFsKvStore(args[0])
+			kvs, err := kv.List()
+			if err != nil {
+				panic(err)
+			}
+			for _, val := range kvs {
+				fmt.Printf("%s:%s\n", val.Key, string(val.Value))
+			}
+		}}
+
 	var rootCmd = &cobra.Command{Use: "agentctl"}
 	rootCmd.AddCommand(createCmd, deleteCmd)
 	rootCmd.AddCommand(publishCmd, unpublishCmd)
+	rootCmd.AddCommand(kvCmd)
 	rootCmd.Execute()
 }
