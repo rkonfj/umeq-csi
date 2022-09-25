@@ -45,7 +45,7 @@ probe:
 }
 
 func (v *VirshAttacher) lookupTarget(volumeId string) (string, error) {
-	resp, err := v.kv.Get("/xiaomakai/virsh/target" + volumeId)
+	resp, err := v.kv.Get("/xiaomakai/virsh/target/" + volumeId)
 	if err != nil {
 		return "", fmt.Errorf("[error] virsh not attach %s yet?", volumeId)
 	}
