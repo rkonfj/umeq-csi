@@ -31,10 +31,10 @@ func (v *VirshAttacher) target(nodeId string) (string, error) {
 	targetLetter := byte('a')
 probe:
 	for _, target := range existsTargets {
-		if !strings.HasPrefix(target, "vd") {
+		if len(target) == 0 || !strings.HasPrefix(target, "vd") {
 			continue
 		}
-		if target[2] == byte(targetLetter) {
+		if target[2] == targetLetter {
 			targetLetter = targetLetter + 1
 			goto probe
 		}
@@ -44,10 +44,10 @@ probe:
 	return target, nil
 }
 
-func (v *VirshAttacher) targetFromEtcd(volumeId string) (string, error) {
+func (v *VirshAttacher) lookupTarget(volumeId string) (string, error) {
 	resp, err := v.kv.Get("/xiaomakai/" + volumeId)
 	if err != nil {
-		return "", fmt.Errorf("not attach %s yet?", volumeId)
+		return "", fmt.Errorf("[error] virsh not attach %s yet?", volumeId)
 	}
 	return string(resp), nil
 }
@@ -85,7 +85,7 @@ func (v *VirshAttacher) Attach(nodeId, volumeId, qcow2Path string) error {
 
 func (v *VirshAttacher) Detach(nodeId, volumeId string) error {
 	log.Println("[info] virsh request detach", nodeId, volumeId)
-	target, err := v.targetFromEtcd(volumeId)
+	target, err := v.lookupTarget(volumeId)
 	if err != nil {
 		return err
 	}
@@ -100,7 +100,7 @@ func (v *VirshAttacher) Detach(nodeId, volumeId string) error {
 }
 
 func (v *VirshAttacher) DevPath(volumeId string) (string, error) {
-	target, err := v.targetFromEtcd(volumeId)
+	target, err := v.lookupTarget(volumeId)
 	if err != nil {
 		return "", err
 	}

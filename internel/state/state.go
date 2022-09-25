@@ -6,8 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-
-	"github.com/gofrs/flock"
+	"sync"
 )
 
 type KvStore interface {
@@ -20,6 +19,7 @@ type KvStore interface {
 
 type FsKvStore struct {
 	root string
+	l    sync.Locker
 }
 
 func NewFsKvStore(root string) KvStore {
@@ -32,6 +32,7 @@ func NewFsKvStore(root string) KvStore {
 
 	kv := &FsKvStore{
 		root: root,
+		l:    &sync.Mutex{},
 	}
 
 	return kv
@@ -59,9 +60,11 @@ func (kv *FsKvStore) Del(key string) error {
 }
 
 func (kv *FsKvStore) Lock(key string) error {
-	return flock.New(filepath.Join(kv.root, kv.encode(key)+".lock")).Lock()
+	kv.l.Lock()
+	return nil
 }
 
 func (kv *FsKvStore) Unlock(key string) error {
-	return flock.New(filepath.Join(kv.root, kv.encode(key)+".lock")).Unlock()
+	kv.l.Unlock()
+	return nil
 }
