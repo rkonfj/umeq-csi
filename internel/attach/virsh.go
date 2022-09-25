@@ -95,6 +95,7 @@ func (v *VirshAttacher) Detach(nodeId, volumeId string) error {
 		return fmt.Errorf("[virsh] detach-disk failed %s error:%w", out, err)
 	}
 	log.Println(string(out))
+	v.Clean(volumeId)
 	return nil
 }
 
