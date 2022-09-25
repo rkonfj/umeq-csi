@@ -95,7 +95,6 @@ func (v *VirshAttacher) Detach(nodeId, volumeId string) error {
 		return err
 	}
 	log.Println(string(out))
-	v.Clean(volumeId)
 	return nil
 }
 
