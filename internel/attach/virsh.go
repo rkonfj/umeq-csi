@@ -77,7 +77,7 @@ func (v *VirshAttacher) Attach(nodeId, volumeId, qcow2Path string) error {
 	log.Println(cmd)
 	out, err := exec.Command("sh", "-c", cmd).CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("%s error:%w", string(out), err)
+		return fmt.Errorf("[virsh] attach-disk failed %s error:%w", string(out), err)
 	}
 	log.Println(string(out))
 	return nil
@@ -90,9 +90,9 @@ func (v *VirshAttacher) Detach(nodeId, volumeId string) error {
 		return err
 	}
 	cmd := fmt.Sprintf("virsh detach-disk %s %s", nodeId, target)
-	out, err := exec.Command("sh", "-c", cmd).Output()
+	out, err := exec.Command("sh", "-c", cmd).CombinedOutput()
 	if err != nil {
-		return err
+		return fmt.Errorf("[virsh] detach-disk failed %s error:%w", out, err)
 	}
 	log.Println(string(out))
 	return nil
