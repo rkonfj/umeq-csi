@@ -1,7 +1,9 @@
+oci_registry?=tasselsd
+
 all: agent plugin
 plugin:
-	docker build . -t tasselsd/umeq-csi:0.0.1;\
-	docker push tasselsd/umeq-csi:0.0.1
+	docker build . -t ${oci_registry}/umeq-csi:0.0.2;\
+	docker push ${oci_registry}/umeq-csi:0.0.2
 agent:
 	cd cmd/agent;\
 	go build -ldflags "-s -w";\

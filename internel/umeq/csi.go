@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -23,6 +24,7 @@ type Csi struct {
 	DriverName    string
 	VendorVersion string
 	Agent         *AgentService
+	lock          sync.Locker
 }
 
 func NewCsi(nodeId, driverName, venderVersion string, agent *AgentService) *Csi {
@@ -31,10 +33,13 @@ func NewCsi(nodeId, driverName, venderVersion string, agent *AgentService) *Csi 
 		DriverName:    driverName,
 		VendorVersion: venderVersion,
 		Agent:         agent,
+		lock:          &sync.Mutex{},
 	}
 }
 
 func (c *Csi) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
+	c.lock.Lock()
+	defer c.lock.Unlock()
 	log.Printf("NodePublishVolume %v", req)
 	// Check arguments
 	if req.GetVolumeCapability() == nil {
@@ -51,10 +56,17 @@ func (c *Csi) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeR
 probe:
 	path, err := c.Agent.GetDevPath(req.VolumeId)
 	if err != nil {
+		log.Println("[warn] get devpath error, try publish volume", req.VolumeId, c.NodeID)
+		err = c.Agent.PublishVolume(req.VolumeId, c.NodeID)
+		if err == nil {
+			time.Sleep(time.Millisecond * 200)
+			goto probe
+		}
+		log.Println("[warn] publishVolume error", err)
 		return nil, fmt.Errorf("get dev-path err: %w", err)
 	}
 	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
-		log.Println("[warn] try request publish volume", req.VolumeId, c.NodeID)
+		log.Println("[warn] get block device error, try publish volume", req.VolumeId, c.NodeID)
 		err = c.Agent.PublishVolume(req.VolumeId, c.NodeID)
 		if err == nil {
 			time.Sleep(time.Millisecond * 200)

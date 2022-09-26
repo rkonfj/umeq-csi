@@ -65,6 +65,8 @@ func (q *QmpAttacher) exec(node, cmd string) error {
 }
 
 func (q *QmpAttacher) Attach(nodeId, volumeId, qcow2Path string) error {
+	q.kv.Lock(volumeId)
+	defer q.kv.Unlock(volumeId)
 	log.Println("[info] qmp request attach", nodeId, volumeId, qcow2Path)
 	cmd := fmt.Sprintf("drive_add 0 if=none,format=qcow2,file=%s,id=%s", qcow2Path, volumeId)
 	err := q.exec(nodeId, cmd)

@@ -70,8 +70,8 @@ func (v *VirshAttacher) generateTarget(nodeId, volumeId string) (string, error) 
 
 func (v *VirshAttacher) Attach(nodeId, volumeId, qcow2Path string) error {
 	log.Println("[info] virsh request attach", nodeId, volumeId, qcow2Path)
-	v.kv.Lock(nodeId)
-	defer v.kv.Unlock(nodeId)
+	v.kv.Lock(volumeId)
+	defer v.kv.Unlock(volumeId)
 	target, err := v.generateTarget(nodeId, volumeId)
 	if err != nil {
 		return err
