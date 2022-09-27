@@ -5,4 +5,6 @@ RUN cd /app/cmd/plugin/;go build -ldflags "-s -w"
 
 FROM alpine:3.16.2
 WORKDIR /app
+RUN sed -i 's/dl-cdn.alpinelinux.org/opentuna.cn/g' /etc/apk/repositories
+RUN apk add e2fsprogs
 COPY --from=builder /app/cmd/plugin/plugin /app/

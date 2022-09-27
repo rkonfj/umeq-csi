@@ -59,7 +59,7 @@ probe:
 		log.Println("[warn] get devpath error, try publish volume", req.VolumeId, c.NodeID)
 		err = c.Agent.PublishVolume(req.VolumeId, c.NodeID)
 		if err == nil {
-			time.Sleep(time.Millisecond * 200)
+			time.Sleep(time.Millisecond * 300)
 			goto probe
 		}
 		log.Println("[warn] publishVolume error", err)
@@ -69,14 +69,12 @@ probe:
 		log.Println("[warn] get block device error, try publish volume", req.VolumeId, c.NodeID)
 		err = c.Agent.PublishVolume(req.VolumeId, c.NodeID)
 		if err == nil {
-			time.Sleep(time.Millisecond * 200)
+			time.Sleep(time.Millisecond * 300)
 			goto probe
 		}
 		log.Println("[warn] publishVolume error", err)
 		return nil, fmt.Errorf("%s not ready yet", path)
 	}
-
-	mounter := mount.New("")
 
 	notMnt, err := mount.IsNotMountPoint(mount.New(""), targetPath)
 	if err != nil {
@@ -101,9 +99,10 @@ probe:
 		options = append(options, "ro")
 	}
 
-	if out, err := exec.Command("blkid", path).Output(); err != nil {
+	if out, err := exec.Command("fsck.ext4", "-n", path).Output(); err != nil {
 		if out, err = exec.Command("mkfs.ext4", path).Output(); err != nil {
-			log.Println("mkfs.ext4 ERR:", err)
+			log.Println("[error] mkfs.ext4 failed", err)
+			return nil, err
 		} else {
 			log.Println(string(out))
 		}
@@ -111,7 +110,7 @@ probe:
 		log.Println(string(out))
 	}
 
-	if err := mounter.Mount(path, targetPath, "", options); err != nil {
+	if err := mount.New("").Mount(path, targetPath, "", options); err != nil {
 		var errList strings.Builder
 		errList.WriteString(err.Error())
 		return nil, fmt.Errorf("failed to mount device: %s at %s: %s", path, targetPath, errList.String())
