@@ -78,8 +78,10 @@ func main() {
 				panic(err)
 			}
 			for _, val := range kvs {
-				fmt.Printf("%s:%s\n", val.Key, string(val.Value))
+				fmt.Printf("%s\n%s:%s\n", val.CodedKey, val.Key, string(val.Value))
+				fmt.Println()
 			}
+			fmt.Println("total count:", len(kvs))
 		}}
 
 	var rootCmd = &cobra.Command{Use: "agentctl"}

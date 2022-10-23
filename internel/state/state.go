@@ -10,8 +10,9 @@ import (
 )
 
 type KV struct {
-	Key   string
-	Value []byte
+	CodedKey string
+	Key      string
+	Value    []byte
 }
 
 type KvStore interface {
@@ -83,8 +84,9 @@ func (kv *FsKvStore) List() ([]*KV, error) {
 	for _, f := range files {
 		b, _ := os.ReadFile(filepath.Join(kv.root, f.Name()))
 		kvs = append(kvs, &KV{
-			Key:   kv.decode(f.Name()),
-			Value: b,
+			CodedKey: f.Name(),
+			Key:      kv.decode(f.Name()),
+			Value:    b,
 		})
 	}
 	return kvs, nil
