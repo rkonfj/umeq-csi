@@ -110,7 +110,7 @@ probe:
 		log.Println(string(out))
 	}
 
-	if err := mount.New("").Mount(path, targetPath, "", options); err != nil {
+	if err := mount.New("").Mount(path, targetPath, "ext4", options); err != nil {
 		var errList strings.Builder
 		errList.WriteString(err.Error())
 		return nil, fmt.Errorf("failed to mount device: %s at %s: %s", path, targetPath, errList.String())
