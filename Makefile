@@ -1,9 +1,12 @@
 oci_registry?=tasselsd
+version?=latest
+
+git_hash:=$(shell git rev-parse HEAD)
 
 all: agent plugin
 plugin:
-	docker build . -t ${oci_registry}/umeq-csi:0.0.2;\
-	docker push ${oci_registry}/umeq-csi:0.0.2
+	docker build --build-arg VERSION=${version}-${git_hash} . -t ${oci_registry}/umeq-csi:${version};\
+	docker push ${oci_registry}/umeq-csi:${version}
 agent:
 	cd cmd/agent;\
 	go build -ldflags "-s -w";\

@@ -1,12 +1,16 @@
 package main
 
 import (
+	"log"
 	"os"
 
 	"github.com/tasselsd/umeq-csi/internel/umeq"
 )
 
+var Version string = "latest"
+
 func main() {
+	log.Println("Plugin Version:", Version)
 	endpoint := os.Getenv("CSI_ENDPOINT")
 	nodeId := os.Getenv("NODE_NAME")
 	agentServer := os.Getenv("AGENT_SERVER")
