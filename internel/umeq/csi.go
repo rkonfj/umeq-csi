@@ -82,6 +82,7 @@ probe:
 			if err = os.MkdirAll(targetPath, 0750); err != nil {
 				return nil, fmt.Errorf("create target path: %w", err)
 			}
+			log.Println("[info] created target path:", targetPath)
 			notMnt = true
 		} else {
 			return nil, fmt.Errorf("check target path: %w", err)
