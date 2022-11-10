@@ -94,13 +94,14 @@ func (kv *FsKvStore) List() ([]*KV, error) {
 
 func (kv *FsKvStore) Lock(key string) error {
 	kv.l.Lock()
-	defer kv.l.Unlock()
 	if l, ok := kv.lMap[key]; ok {
+		kv.l.Unlock()
 		l.Lock()
 		return nil
 	}
 	l := &sync.Mutex{}
 	kv.lMap[key] = l
+	kv.l.Unlock()
 	l.Lock()
 	return nil
 }
