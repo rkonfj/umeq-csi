@@ -40,7 +40,7 @@ probe:
 		}
 	}
 	target := "vd" + string(targetLetter)
-	log.Println("determined target:", target)
+	log.Println("determined target[", target, "] on node ", nodeId)
 	return target, nil
 }
 
