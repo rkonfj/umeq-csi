@@ -50,7 +50,7 @@ func (a *CommonAttacher) getSerialId(volumeId string) (string, error) {
 }
 
 func (a *CommonAttacher) Clean(volumeId string) error {
-	log.Println("[info] request clean", volumeId, "attach info")
+	log.Println("[info] clean", volumeId, "attach info")
 	return a.kv.Del("/xiaomakai/" + volumeId)
 }
 
