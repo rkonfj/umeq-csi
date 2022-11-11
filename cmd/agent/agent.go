@@ -96,9 +96,6 @@ func (a *Agent) DeleteVolume(volumeId string) error {
 	if err := os.Remove(qcowPath); err != nil {
 		return fmt.Errorf("delete qcow2 err:%w", err)
 	}
-	if err := a.attacher.Clean(volumeId); err != nil {
-		log.Println("[warn] volume attcher clean failed", err)
-	}
 	if err := a.removeVolumeKind(volumeId); err != nil {
 		log.Println("[warn] volume kind state remove failed", err)
 	}
