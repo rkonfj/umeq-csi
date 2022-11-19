@@ -5,7 +5,7 @@ import (
 	"log"
 	"strconv"
 
-	"github.com/tasselsd/umeq-csi/internel/state"
+	"github.com/tasselsd/umeq-csi/pkg/state"
 )
 
 type Attacher interface {

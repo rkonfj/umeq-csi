@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/tasselsd/umeq-csi/internel/qmp"
-	"github.com/tasselsd/umeq-csi/internel/state"
+	"github.com/tasselsd/umeq-csi/pkg/qmp"
+	"github.com/tasselsd/umeq-csi/pkg/state"
 )
 
 type QmpAttacher struct {

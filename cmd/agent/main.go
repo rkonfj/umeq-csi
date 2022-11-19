@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 
 	"github.com/kataras/iris/v12"
-	"github.com/tasselsd/umeq-csi/internel/attach"
-	"github.com/tasselsd/umeq-csi/internel/state"
+	"github.com/tasselsd/umeq-csi/pkg/attach"
+	"github.com/tasselsd/umeq-csi/pkg/state"
 )
 
 var gracefulShutdowns []func() error

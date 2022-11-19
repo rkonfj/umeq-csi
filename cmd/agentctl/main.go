@@ -6,8 +6,8 @@ import (
 	"strconv"
 
 	"github.com/spf13/cobra"
-	"github.com/tasselsd/umeq-csi/internel/state"
-	"github.com/tasselsd/umeq-csi/internel/umeq"
+	"github.com/tasselsd/umeq-csi/pkg/state"
+	"github.com/tasselsd/umeq-csi/pkg/umeq"
 )
 
 func main() {

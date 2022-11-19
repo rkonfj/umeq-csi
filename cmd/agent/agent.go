@@ -7,8 +7,8 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/tasselsd/umeq-csi/internel/attach"
-	"github.com/tasselsd/umeq-csi/internel/state"
+	"github.com/tasselsd/umeq-csi/pkg/attach"
+	"github.com/tasselsd/umeq-csi/pkg/state"
 )
 
 type Agent struct {

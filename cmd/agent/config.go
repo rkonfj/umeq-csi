@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/tasselsd/umeq-csi/internel/attach"
+	"github.com/tasselsd/umeq-csi/pkg/attach"
 	"gopkg.in/yaml.v3"
 )
 

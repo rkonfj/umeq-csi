@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/tasselsd/umeq-csi/internel/state"
+	"github.com/tasselsd/umeq-csi/pkg/state"
 )
 
 type VirshAttacher struct {
