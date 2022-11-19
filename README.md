@@ -59,3 +59,5 @@ kubectl create -f https://raw.githubusercontent.com/tasselsd/umeq-csi/master/dis
 ```
 kubectl create -f https://raw.githubusercontent.com/tasselsd/umeq-csi/master/distro/pvc-test.yml
 ```
+### Contributing
+This is a very early version, and you are very welcome to contribute.
