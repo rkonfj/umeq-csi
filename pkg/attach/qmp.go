@@ -24,11 +24,15 @@ import (
 	"github.com/tasselsd/umeq-csi/pkg/state"
 )
 
+// Qmp protocol attacher
 type QmpAttacher struct {
 	CommonAttacher
+
+	// qemu qmp monitor unix socket operators
 	mons map[string]*qmp.Monitor
 }
 
+// Socket for qemu virtual machine
 type Sock struct {
 	Name string
 	Path string
@@ -57,6 +61,7 @@ func NewQmpAttacher(kv state.KvStore, qs []Sock) *QmpAttacher {
 	return attacher
 }
 
+// execute human read qmp command on node
 func (q *QmpAttacher) exec(node, cmd string) error {
 	var out string
 

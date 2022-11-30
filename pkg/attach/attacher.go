@@ -22,13 +22,22 @@ import (
 	"github.com/tasselsd/umeq-csi/pkg/state"
 )
 
+// Functions that umeq-csi-agent attach disk to the node
 type Attacher interface {
+	//attach qcow2 disk to node
 	Attach(nodeId, volumeId, qcow2Path string) error
+
+	// from node detach volume
 	Detach(nodeId, volumeId string) error
+
+	// get disk device path on node by volumeId. such as "/dev/disk/by-id/virtio-xxx"
 	DevPath(volumeId string) (string, error)
+
+	// clean every about volume
 	Clean(volumeId string) error
 }
 
+// Abstract attacher
 type CommonAttacher struct {
 	kv state.KvStore
 }

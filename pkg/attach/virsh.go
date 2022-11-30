@@ -23,6 +23,7 @@ import (
 	"github.com/tasselsd/umeq-csi/pkg/state"
 )
 
+// Virsh command attacher (for libvirt)
 type VirshAttacher struct {
 	CommonAttacher
 }
