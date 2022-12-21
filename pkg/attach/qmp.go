@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/tasselsd/umeq-csi/pkg/qmp"
@@ -30,6 +31,12 @@ type QmpAttacher struct {
 
 	// qemu qmp monitor unix socket operators
 	mons map[string]*qmp.Monitor
+
+	// create mon logic
+	createMon func(name string) (*qmp.Monitor, error)
+
+	// mutex lock
+	l sync.Mutex
 }
 
 // Socket for qemu virtual machine
@@ -44,20 +51,20 @@ func NewQmpAttacher(kv state.KvStore, qs []Sock) *QmpAttacher {
 			kv: kv,
 		},
 		mons: make(map[string]*qmp.Monitor),
+		createMon: func(name string) (*qmp.Monitor, error) {
+			for _, q := range qs {
+				mon, err := qmp.NewMonitor(q.Path, 60*time.Second)
+				if err != nil {
+					return nil, err
+				}
+				if q.Name == name {
+					return mon, nil
+				}
+			}
+			return nil, fmt.Errorf("mon %s not found", name)
+		},
 	}
 
-	for _, q := range qs {
-		mon, err := qmp.NewMonitor(q.Path, 60*time.Second)
-		if err != nil {
-			log.Println(err)
-			continue
-		}
-		log.Printf("Registered %s -> %s\n", q.Name, q.Path)
-		attacher.mons[q.Name] = mon
-	}
-	if len(attacher.mons) == 0 {
-		panic("no any normal mons found, exiting...")
-	}
 	return attacher
 }
 
@@ -68,7 +75,13 @@ func (q *QmpAttacher) exec(node, cmd string) error {
 	mon := q.mons[node]
 
 	if mon == nil {
-		return fmt.Errorf("mon %s not found", node)
+		q.l.Lock()
+		defer q.l.Unlock()
+		mon, err := q.createMon(node)
+		if err != nil {
+			return err
+		}
+		q.mons[node] = mon
 	}
 
 	if err := mon.Run(qmp.Command{
