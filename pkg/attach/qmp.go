@@ -77,11 +77,14 @@ func (q *QmpAttacher) exec(node, cmd string) error {
 	if mon == nil {
 		q.l.Lock()
 		defer q.l.Unlock()
-		mon, err := q.createMon(node)
-		if err != nil {
-			return err
+		mon = q.mons[node]
+		if mon == nil {
+			mon, err := q.createMon(node)
+			if err != nil {
+				return err
+			}
+			q.mons[node] = mon
 		}
-		q.mons[node] = mon
 	}
 
 	if err := mon.Run(qmp.Command{
